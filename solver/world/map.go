@@ -58,7 +58,7 @@ func ReadMap(r io.Reader) (Map, error) {
 		for x, c := range s.Bytes() {
 			tile, err := tileFromChar(c)
 			if err != nil {
-				return Map{}, fmt.Errorf("error reading map @(%d,%d): %v", x, y, err)
+				return Map{}, fmt.Errorf("%v @(%d,%d)", err, x, y)
 			}
 			line = append(line, tile)
 
