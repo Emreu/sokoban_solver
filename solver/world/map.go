@@ -103,6 +103,7 @@ func ReadMap(r io.Reader) (Map, error) {
 	if playerStartCount != 1 {
 		err = fmt.Errorf("unexpected number of player start positions: %d", playerStartCount)
 	}
+	// TODO: fill uneven map rows with empty tile
 
 	return Map{
 		Width:  w,
@@ -111,4 +112,36 @@ func ReadMap(r io.Reader) (Map, error) {
 		StartY: pY,
 		Tiles:  tiles,
 	}, err
+}
+
+func (m Map) InitialBoxPositions() []Pos {
+	var pos []Pos
+	for y, row := range m.Tiles {
+		for x, tile := range row {
+			switch tile {
+			case TileBox, TileBoxOnGoal:
+				pos = append(pos, Pos{x, y})
+			}
+		}
+	}
+	return pos
+}
+
+func (m Map) At(x, y int) Tile {
+	if x < 0 || x >= m.Width || y < 0 || y >= m.Height {
+		return TileEmpty
+	}
+	return m.Tiles[y][x]
+}
+
+func (m Map) AtPos(p Pos) Tile {
+	return m.At(p.X, p.Y)
+}
+
+func (m Map) IsInside(p Pos) bool {
+	return p.X >= 0 && p.X < m.Width && p.Y >= 0 && p.Y < m.Height
+}
+
+func (m Map) StartPos() Pos {
+	return Pos{X: m.StartX, Y: m.StartY}
 }
