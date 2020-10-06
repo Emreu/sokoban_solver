@@ -26,6 +26,10 @@ type Map struct {
 	Tiles  [][]Tile
 }
 
+func (m Map) String() string {
+	return fmt.Sprintf("Map %dx%d", m.Width, m.Height)
+}
+
 var tileChars = map[byte]Tile{
 	'#': TileWall,
 	'@': TilePlayerStart,

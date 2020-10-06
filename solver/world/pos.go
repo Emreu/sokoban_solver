@@ -1,8 +1,14 @@
 package world
 
+import "fmt"
+
 type Pos struct {
 	X int
 	Y int
+}
+
+func (p Pos) String() string {
+	return fmt.Sprintf("(%d,%d)", p.X, p.Y)
 }
 
 func (p Pos) Neighbours() []Pos {
@@ -11,6 +17,15 @@ func (p Pos) Neighbours() []Pos {
 		{X: p.X + 1, Y: p.Y},
 		{X: p.X, Y: p.Y + 1},
 		{X: p.X - 1, Y: p.Y},
+	}
+}
+
+func (p Pos) Diagonals() []Pos {
+	return []Pos{
+		{X: p.X - 1, Y: p.Y - 1},
+		{X: p.X + 1, Y: p.Y - 1},
+		{X: p.X + 1, Y: p.Y + 1},
+		{X: p.X - 1, Y: p.Y + 1},
 	}
 }
 

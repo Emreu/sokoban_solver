@@ -1,5 +1,9 @@
 package world
 
+import (
+	"strings"
+)
+
 type MoveDirection int
 
 const (
@@ -8,6 +12,20 @@ const (
 	MoveDown
 	MoveLeft
 )
+
+func (d MoveDirection) String() string {
+	switch d {
+	case MoveUp:
+		return "up"
+	case MoveRight:
+		return "right"
+	case MoveDown:
+		return "down"
+	case MoveLeft:
+		return "left"
+	}
+	return "???"
+}
 
 type MoveDomain struct {
 	tiles map[Pos]struct{} // simple implementation
@@ -86,6 +104,16 @@ func (md *MoveDomain) HasPosition(pos Pos) bool {
 
 func (md *MoveDomain) AddPosition(pos Pos) {
 	md.tiles[pos] = struct{}{}
+}
+
+func (md MoveDomain) String() string {
+	buf := &strings.Builder{}
+	buf.WriteString("MoveDomain{")
+	for pos := range md.tiles {
+		buf.WriteString(pos.String())
+	}
+	buf.WriteString("}")
+	return buf.String()
 }
 
 // func (md *MoveDomain) AddContacts(pos Pos) {
