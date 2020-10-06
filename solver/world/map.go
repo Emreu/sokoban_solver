@@ -33,7 +33,7 @@ func (m Map) String() string {
 var tileChars = map[byte]Tile{
 	'#': TileWall,
 	'@': TilePlayerStart,
-	'+': TilePlayerStart,
+	'+': TilePlayerOnGoal,
 	'$': TileBox,
 	'*': TileBoxOnGoal,
 	'.': TileGoal,

@@ -8,10 +8,11 @@ import (
 
 type Solver struct {
 	Map
-	deadZones MoveDomain
-	root      *Node
-	solution  *Node
-	Done      bool
+	deadZones  MoveDomain
+	root       *Node
+	solution   *Node
+	metricCalc MetricCalculator
+	Done       bool
 }
 
 func NewSolver(m Map) *Solver {
@@ -73,6 +74,7 @@ func (s *Solver) findDeadZones() {
 			}
 		}
 	}
+	// TODO: add dead zone propagation - grow vert+horiz - if wall on one side, and hit another wall (or deadzone) - all line is deadzone
 
 	log.Printf("Deadzones: %s", s.deadZones)
 }
@@ -84,6 +86,9 @@ func (s *Solver) Solve(c context.Context) error {
 	// prepare
 	log.Print("Finding dead zones...")
 	s.findDeadZones()
+
+	log.Print("Preparing metric calc...")
+	s.metricCalc = NewMetricCalculator(s.Map)
 
 	// initialize
 	log.Print("Initializing...")
@@ -111,8 +116,8 @@ func (s *Solver) Solve(c context.Context) error {
 		log.Printf("Exploring frontier #%d of %d nodes...", step, len(exploreFrontier))
 		for _, node := range exploreFrontier {
 			newNodes := s.exploreNode(node)
-			// check if solution was found
 			for _, n := range newNodes {
+				// check if solution was found
 				if s.isSolution(n.State) {
 					log.Print("Solution found!")
 					s.solution = n
@@ -123,16 +128,11 @@ func (s *Solver) Solve(c context.Context) error {
 			}
 		}
 		exploreFrontier = nextFrontier
+		// TODO: add explore frontier limitation if its too large
+		// range nodes based on state estimation and explore only top-N nodes
+		// store best metric value for postponed nodes and reconsider them only if current frontier is too small or metrics of its nodes become worse
 		step++
 	}
-
-	// TODO: implement
-	// for every node in search graph
-	// find unexplored movements
-	// for every movement generate new state (if not registered before)
-	// add nodes for corresponding moves and states
-	// evaluate metrics for new states
-	// range states by metrics
 
 	s.Done = true
 	return nil
@@ -241,5 +241,7 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 		current = previous
 		previous = current.Parent
 	}
+	// TODO: use A* to generate path from state to state (in move domain only)
+	// reverse path
 	return []MoveDirection{MoveUp, MoveDown, MoveLeft, MoveRight}, nil
 }
