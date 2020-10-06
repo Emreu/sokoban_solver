@@ -8,9 +8,14 @@
 
 config_version=4
 
-_global_script_classes=[  ]
+_global_script_classes=[ {
+"base": "Reference",
+"class": "Common",
+"language": "GDScript",
+"path": "res://common.gd"
+} ]
 _global_script_class_icons={
-
+"Common": ""
 }
 
 [application]
@@ -18,6 +23,14 @@ _global_script_class_icons={
 config/name="Visualizer"
 run/main_scene="res://main.tscn"
 config/icon="res://icon.png"
+
+[input]
+
+ui_undo={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":true,"meta":false,"command":true,"pressed":false,"scancode":90,"unicode":0,"echo":false,"script":null)
+ ]
+}
 
 [rendering]
 

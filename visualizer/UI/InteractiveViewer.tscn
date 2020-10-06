@@ -1,0 +1,87 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://UI/InteractiveViewer.gd" type="Script" id=1]
+[ext_resource path="res://UI/MovesList.gd" type="Script" id=2]
+[ext_resource path="res://Levels/Level.gd" type="Script" id=3]
+
+[node name="Viewer" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+margin_right = 1024.0
+margin_bottom = 600.0
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer/HBoxContainer"]
+margin_right = 892.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ViewportContainer" type="ViewportContainer" parent="VBoxContainer/HBoxContainer/MarginContainer"]
+margin_right = 892.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+stretch = true
+
+[node name="LevelView" type="Viewport" parent="VBoxContainer/HBoxContainer/MarginContainer/ViewportContainer"]
+size = Vector2( 892, 600 )
+handle_input_locally = false
+render_target_update_mode = 3
+
+[node name="Polygon2D" type="Polygon2D" parent="VBoxContainer/HBoxContainer/MarginContainer/ViewportContainer/LevelView"]
+polygon = PoolVector2Array( 101.089, 134.16, 285.173, 64.5677, 497.318, 173.446, 291.908, 308.142, 175.171, 266.611, 319.969, 188.038, 282.928, 152.12, 107.824, 194.773 )
+
+[node name="Camera2D" type="Camera2D" parent="VBoxContainer/HBoxContainer/MarginContainer/ViewportContainer/LevelView"]
+current = true
+
+[node name="Level" type="Node2D" parent="VBoxContainer/HBoxContainer/MarginContainer/ViewportContainer/LevelView"]
+script = ExtResource( 3 )
+
+[node name="FastForwardProgress" type="ProgressBar" parent="VBoxContainer/HBoxContainer/MarginContainer"]
+visible = false
+margin_top = 293.0
+margin_right = 892.0
+margin_bottom = 307.0
+size_flags_vertical = 4
+
+[node name="RightPanel" type="VBoxContainer" parent="VBoxContainer/HBoxContainer"]
+margin_left = 896.0
+margin_right = 1024.0
+margin_bottom = 600.0
+rect_min_size = Vector2( 128, 0 )
+size_flags_vertical = 3
+
+[node name="CurMove" type="Label" parent="VBoxContainer/HBoxContainer/RightPanel"]
+margin_right = 128.0
+margin_bottom = 14.0
+
+[node name="Moves" type="ItemList" parent="VBoxContainer/HBoxContainer/RightPanel"]
+margin_top = 18.0
+margin_right = 128.0
+margin_bottom = 576.0
+focus_mode = 0
+size_flags_vertical = 3
+items = [ "-- Start --", null, false ]
+script = ExtResource( 2 )
+
+[node name="Reset" type="Button" parent="VBoxContainer/HBoxContainer/RightPanel"]
+margin_top = 580.0
+margin_right = 128.0
+margin_bottom = 600.0
+text = "Reset"
+[connection signal="item_selected" from="VBoxContainer/HBoxContainer/RightPanel/Moves" to="." method="GotoMove"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/RightPanel/Reset" to="." method="_on_Reset_pressed"]
