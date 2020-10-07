@@ -87,7 +87,6 @@ func ReadMap(r io.Reader) (Map, error) {
 			}
 		}
 
-		// TODO: validate line width
 		if len(line) == 0 {
 			continue
 		}
@@ -107,7 +106,13 @@ func ReadMap(r io.Reader) (Map, error) {
 	if playerStartCount != 1 {
 		err = fmt.Errorf("unexpected number of player start positions: %d", playerStartCount)
 	}
-	// TODO: fill uneven map rows with empty tile
+	// fill incomplete rows with empty tile
+	for y, row := range tiles {
+		for len(row) < w {
+			row = append(row, TileEmpty)
+		}
+		tiles[y] = row
+	}
 
 	return Map{
 		Width:  w,
