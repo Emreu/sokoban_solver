@@ -27,6 +27,22 @@ func (d MoveDirection) String() string {
 	return "???"
 }
 
+func (d MoveDirection) RotateCW() MoveDirection {
+	d++
+	if d > MoveLeft {
+		d = MoveUp
+	}
+	return d
+}
+
+func (d MoveDirection) RotateCCW() MoveDirection {
+	d--
+	if d < MoveUp {
+		d = MoveLeft
+	}
+	return d
+}
+
 type MoveDomain struct {
 	tiles map[Pos]struct{} // simple implementation
 	// contacts map[Pos]struct{}

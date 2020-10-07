@@ -24,6 +24,7 @@ func NewSolver(m Map) *Solver {
 
 // Find dead zones - positions from where it is impossible to move box to goal
 func (s *Solver) findDeadZones() {
+	var deadCorners []Pos
 	addDeadZone := func(x, y int) {
 		pos := Pos{x, y}
 		if !s.Map.IsInside(pos) {
@@ -34,9 +35,14 @@ func (s *Solver) findDeadZones() {
 			// do nothing
 			return
 		}
+		// don't add if already added
+		if s.deadZones.HasPosition(pos) {
+			return
+		}
+		deadCorners = append(deadCorners, pos)
 		s.deadZones.AddPosition(pos)
 	}
-	// at rirst find corners
+	// at rirst find dead corners
 	for y, row := range s.Map.Tiles {
 		for x, tile := range row {
 			if tile == TileWall {
@@ -74,9 +80,69 @@ func (s *Solver) findDeadZones() {
 			}
 		}
 	}
-	// TODO: add dead zone propagation - grow vert+horiz - if wall on one side, and hit another wall (or deadzone) - all line is deadzone
 
-	log.Printf("Deadzones: %s", s.deadZones)
+	log.Printf("Deadzones (corners only): %s", s.deadZones)
+
+	// propagate dead corners
+	for _, startPos := range deadCorners {
+		for _, dir := range []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft} {
+			// log.Printf("Propagating from %s to %s", startPos, dir)
+			pos := startPos.MoveInDirection(dir)
+			if s.Map.AtPos(pos) == TileWall {
+				// log.Print("Stop: wall at first tile")
+				continue
+			}
+			var leftOpen, rightOpen bool
+			var deadCorridor []Pos
+			// advance position & check left & right walls
+		rayScan:
+			for {
+				// if out of map - stop
+				if !s.Map.IsInside(pos) {
+					// log.Print("Stop: out of map")
+					break rayScan
+				}
+				// if goal on path - it not dead zone
+				switch s.Map.AtPos(pos) {
+				case TileGoal, TileBoxOnGoal, TilePlayerOnGoal:
+					// log.Print("Stop: goal on line")
+					break rayScan
+				}
+				// check left if it's not open yet
+				if !leftOpen {
+					leftPos := pos.MoveInDirection(dir.RotateCCW())
+					if s.Map.AtPos(leftPos) != TileWall {
+						leftOpen = true
+					}
+				}
+				// check right if it's not open yet
+				if !rightOpen {
+					rightPos := pos.MoveInDirection(dir.RotateCW())
+					if s.Map.AtPos(rightPos) != TileWall {
+						rightOpen = true
+					}
+				}
+				// if both open - stop propagation
+				if leftOpen && rightOpen {
+					// log.Print("Stop: both sides clear")
+					break rayScan
+				}
+				// move ahead
+				deadCorridor = append(deadCorridor, pos)
+				pos = pos.MoveInDirection(dir)
+				// if wall hit - stop propagation and add corridor to dead zone
+				if s.Map.AtPos(pos) == TileWall {
+					// log.Print("Wall hit - adding to deadzones!")
+					for _, p := range deadCorridor {
+						s.deadZones.AddPosition(p)
+					}
+					break rayScan
+				}
+			}
+		}
+	}
+
+	log.Printf("Deadzones (with propagation): %s", s.deadZones)
 }
 
 func (s *Solver) Solve(c context.Context) error {
