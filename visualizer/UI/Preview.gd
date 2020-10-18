@@ -1,39 +1,70 @@
-extends Node2D
+extends TextureRect
 
+var tiles = preload("res://assets/preview.svg")
+const tile_size = 8
+const offset = {
+	"empty": 0,
+	"wall": 1,
+	"player": 2,
+	"goal": 3,
+	"player_on_goal": 4,
+	"box": 5,
+	"box_on_goal": 6,
+}
 
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
-var tiles
-var tile_size = 8
-
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	tiles = Image.new()
-	if tiles.load("assets/preview.svg") != OK:
-		print("Can't load preview tiles image")
 	tiles.convert(Image.FORMAT_RGB8)
-	var tex = makeTexture(128,128)
-	$TextureRect.texture = tex
 	
+func tileAt(pos, level):
+	if pos in level["walls"]:
+		return "wall"
+		
+	var isBox = pos in level["boxes"]
+	var isGoal = pos in level["goals"]
+	var isPlayer = pos == level["start"]
+	
+	if isBox:
+		if isGoal:
+			return "box_on_goal"
+		else:
+			return "box"
+			
+	if isPlayer:
+		if isGoal:
+			return "player_on_goal"
+		else:
+			return "player"
+			
+	if isGoal:
+		return "goal"
+			
+	return "empty"
 
-func makeTexture(w, h):
+func makeTexture(w, h, level):
+	if level.has("preview"):
+		return level["preview"]
 	var img = Image.new()
-	img.create(w, h, false, Image.FORMAT_RGB8)
+	img.create(w*tile_size, h*tile_size, false, Image.FORMAT_RGB8)
+	
 	for y in range(h):
 		for x in range(w):
-			var i = randi() % 8
-			img.blit_rect(tiles, Rect2(i*tile_size, 0, 8, 8), Vector2(x*tile_size, y*tile_size))
+			var pos = Vector2(x, y)
+			var tile = tileAt(pos, level)
+			img.blit_rect(tiles, Rect2(offset[tile]*tile_size, 0, 8, 8), Vector2(pos.x*tile_size, pos.y*tile_size))
+			
 	var tex = ImageTexture.new()
 	tex.create_from_image(img, 0)
+	level["preview"] = tex
 	return tex
 
+func ShowLevel(level):
+	var w = 0
+	var h = 0
+	for pos in level["walls"]:
+		if pos.x > w:
+			w = pos.x
+		if pos.y > h:
+			h = pos.y
+	var tex = makeTexture(w+1,h+1,level)
+	texture = tex
 
-#func _process(delta):
-#	var tex = makeTexture(128,128)
-#	$TextureRect.texture = tex
-
-func _on_Button_pressed():
-	var tex = makeTexture(128,128)
-	$TextureRect.texture = tex

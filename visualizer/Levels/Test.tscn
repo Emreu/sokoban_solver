@@ -91,9 +91,7 @@ position = Vector2( 32, 64 )
 [node name="Goal" parent="Goals" instance=ExtResource( 2 )]
 position = Vector2( 32, 16 )
 
-[node name="Goals2" type="Node2D" parent="."]
-
-[node name="Goal" parent="Goals2" instance=ExtResource( 2 )]
+[node name="Goal2" parent="Goals" instance=ExtResource( 2 )]
 position = Vector2( 48, 16 )
 
 [node name="Player" parent="." instance=ExtResource( 1 )]

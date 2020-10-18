@@ -1,0 +1,116 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://UI/Loader.gd" type="Script" id=1]
+[ext_resource path="res://UI/Preview.gd" type="Script" id=2]
+[ext_resource path="res://UI/InteractiveViewer.tscn" type="PackedScene" id=3]
+
+[sub_resource type="NoiseTexture" id=1]
+width = 256
+height = 256
+
+[node name="Loader" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Viewer" parent="." instance=ExtResource( 3 )]
+visible = false
+
+[node name="LoaderUI" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="FileDialog" type="FileDialog" parent="LoaderUI"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = 252.5
+margin_top = 133.5
+margin_right = 731.5
+margin_bottom = 426.5
+window_title = "Open a File"
+mode = 0
+access = 2
+current_dir = "/home/emreu/otus/sokoban_solver/visualizer"
+current_path = "/home/emreu/otus/sokoban_solver/visualizer/"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LevelsList" type="ItemList" parent="LoaderUI"]
+margin_left = 48.0
+margin_top = 75.0
+margin_right = 350.0
+margin_bottom = 478.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="LoaderUI"]
+margin_left = 49.3521
+margin_top = 54.1089
+margin_right = 90.3521
+margin_bottom = 68.1089
+text = "Levels"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Preview" type="TextureRect" parent="LoaderUI"]
+margin_left = 585.071
+margin_top = 81.3367
+margin_right = 841.071
+margin_bottom = 337.337
+texture = SubResource( 1 )
+expand = true
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label2" type="Label" parent="LoaderUI"]
+margin_left = 588.034
+margin_top = 57.5763
+margin_right = 638.034
+margin_bottom = 71.5763
+text = "Preview"
+
+[node name="NewMapButton" type="Button" parent="LoaderUI"]
+margin_left = 52.857
+margin_top = 494.59
+margin_right = 92.857
+margin_bottom = 514.59
+text = "New"
+
+[node name="MapLoadButton" type="Button" parent="LoaderUI"]
+margin_left = 150.076
+margin_top = 495.534
+margin_right = 251.076
+margin_bottom = 515.534
+text = "Read from file"
+
+[node name="MapEditButton" type="Button" parent="LoaderUI"]
+margin_left = 723.952
+margin_top = 359.616
+margin_right = 824.952
+margin_bottom = 379.616
+text = "Edit"
+
+[node name="PlayButton" type="Button" parent="LoaderUI"]
+margin_left = 605.024
+margin_top = 356.784
+margin_right = 706.024
+margin_bottom = 376.784
+text = "Play"
+[connection signal="exit" from="Viewer" to="." method="_on_Viewer_exit"]
+[connection signal="file_selected" from="LoaderUI/FileDialog" to="." method="_on_FileDialog_file_selected"]
+[connection signal="item_selected" from="LoaderUI/LevelsList" to="." method="_on_LevelsList_item_selected"]
+[connection signal="pressed" from="LoaderUI/MapLoadButton" to="." method="_on_MapLoadButton_pressed"]
+[connection signal="pressed" from="LoaderUI/PlayButton" to="." method="_on_PlayButton_pressed"]

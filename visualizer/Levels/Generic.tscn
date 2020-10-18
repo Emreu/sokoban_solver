@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Levels/Level.gd" type="Script" id=1]
+[ext_resource path="res://Objects/Player.tscn" type="PackedScene" id=4]
+
+[node name="Level" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="Boxes" type="Node2D" parent="."]
+
+[node name="Goals" type="Node2D" parent="."]
+
+[node name="Deadzones" type="Node2D" parent="."]
+
+[node name="Player" parent="." instance=ExtResource( 4 )]
+DirectControl = false
+
+[node name="Metrics" type="Node2D" parent="."]
+
+[node name="Camera" type="Camera2D" parent="."]
+anchor_mode = 0
+current = true
+[connection signal="win" from="." to="." method="_on_Level_win"]
