@@ -122,6 +122,14 @@ func (md *MoveDomain) AddPosition(pos Pos) {
 	md.tiles[pos] = struct{}{}
 }
 
+func (md *MoveDomain) ListPosition() []Pos {
+	var pos []Pos
+	for p := range md.tiles {
+		pos = append(pos, p)
+	}
+	return pos
+}
+
 func (md MoveDomain) String() string {
 	buf := &strings.Builder{}
 	buf.WriteString("MoveDomain{")

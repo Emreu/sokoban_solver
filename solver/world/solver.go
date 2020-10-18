@@ -145,7 +145,7 @@ func (s *Solver) findDeadZones() {
 	log.Printf("Deadzones (with propagation): %s", s.deadZones)
 }
 
-func (s *Solver) Solve(c context.Context) error {
+func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 	if s.Done {
 		return nil
 	}
@@ -155,6 +155,10 @@ func (s *Solver) Solve(c context.Context) error {
 
 	log.Print("Preparing metric calc...")
 	s.metricCalc = NewMetricCalculator(s.Map)
+
+	if debugOnly {
+		return nil
+	}
 
 	// initialize
 	log.Print("Initializing...")
@@ -310,4 +314,37 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 	// TODO: use A* to generate path from state to state (in move domain only)
 	// reverse path
 	return []MoveDirection{MoveUp, MoveDown, MoveLeft, MoveRight}, nil
+}
+
+type SolverDebug struct {
+	DeadZones []Pos            `json:"dead_zones"`
+	Metrics   []map[string]int `json:"metrics"`
+}
+
+func (s Solver) GetDebug() SolverDebug {
+	dz := s.deadZones.ListPosition()
+	var metricsMap = make(map[Pos]map[string]int)
+
+	for y, row := range s.metricCalc.cells {
+		for x, cell := range row {
+			for goalPos, value := range cell.dist {
+				field, ok := metricsMap[goalPos]
+				if !ok {
+					field = make(map[string]int)
+				}
+				field[fmt.Sprintf("%d,%d", x, y)] = value
+				metricsMap[goalPos] = field
+			}
+		}
+	}
+
+	var metricList []map[string]int
+	for _, field := range metricsMap {
+		metricList = append(metricList, field)
+	}
+
+	return SolverDebug{
+		DeadZones: dz,
+		Metrics:   metricList,
+	}
 }

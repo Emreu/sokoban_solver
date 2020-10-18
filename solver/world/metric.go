@@ -40,19 +40,23 @@ func NewMetricCalculator(m Map) MetricCalculator {
 func (mc *MetricCalculator) propagate(m Map) {
 	log.Print("Running metric propagation...")
 	// run propagation until no new updates are made
-	// TODO: add sanity checking for propagation, so impossible moves are discarded
 	for {
 		noUpdates := true
 		for y, row := range mc.cells {
 			for x, c := range row {
 				curPos := Pos{x, y}
-				for _, p := range curPos.Neighbours() {
-					if p.X < 0 || p.X >= m.Width || p.Y < 0 || p.Y >= m.Height {
+				if m.AtPos(curPos) == TileWall {
+					continue
+				}
+				for _, dir := range []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft} {
+					p := curPos.MoveInDirection(dir)
+					if !m.IsInside(p) {
 						continue
 					}
-					if m.At(x, y) == TileWall {
-						continue
-					}
+					// check if 2 step ahead is not wall, so it's possible to move box from there
+					// if m.AtPos(p.MoveInDirection(dir)) == TileWall {
+					// 	continue
+					// }
 					nc := mc.cells[p.Y][p.X]
 
 					// loop over all goals in neighbour cell
