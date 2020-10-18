@@ -99,7 +99,6 @@ func ReadMap(r io.Reader) (Map, error) {
 	}
 
 	var err error
-	// TODO: check if it's valid to have unmatching counts
 	if boxCount != goalCount {
 		err = fmt.Errorf("not equal numbers of boxes(%d) and goals(%d)", boxCount, goalCount)
 	}

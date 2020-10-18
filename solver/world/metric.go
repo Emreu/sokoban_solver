@@ -14,7 +14,7 @@ type MetricCalculator struct {
 	cells [][]cell
 }
 
-func NewMetricCalculator(m Map) MetricCalculator {
+func NewMetricCalculator(m Map, deadzones MoveDomain) MetricCalculator {
 	cells := make([][]cell, m.Height)
 	for y := 0; y < m.Height; y++ {
 		row := make([]cell, m.Width)
@@ -33,11 +33,11 @@ func NewMetricCalculator(m Map) MetricCalculator {
 	mc := MetricCalculator{
 		cells: cells,
 	}
-	mc.propagate(m)
+	mc.propagate(m, deadzones)
 	return mc
 }
 
-func (mc *MetricCalculator) propagate(m Map) {
+func (mc *MetricCalculator) propagate(m Map, deadzones MoveDomain) {
 	log.Print("Running metric propagation...")
 	// run propagation until no new updates are made
 	for {
@@ -48,15 +48,22 @@ func (mc *MetricCalculator) propagate(m Map) {
 				if m.AtPos(curPos) == TileWall {
 					continue
 				}
+				if deadzones.HasPosition(curPos) {
+					continue
+				}
 				for _, dir := range []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft} {
 					p := curPos.MoveInDirection(dir)
 					if !m.IsInside(p) {
 						continue
 					}
-					// check if 2 step ahead is not wall, so it's possible to move box from there
-					// if m.AtPos(p.MoveInDirection(dir)) == TileWall {
-					// 	continue
-					// }
+					pushPos := curPos.MoveAgainstDirection(dir)
+					// check if there is no wall at push position, so it's possible to move box
+					if !m.IsInside(pushPos) {
+						continue
+					}
+					if m.AtPos(pushPos) == TileWall {
+						continue
+					}
 					nc := mc.cells[p.Y][p.X]
 
 					// loop over all goals in neighbour cell
@@ -74,7 +81,7 @@ func (mc *MetricCalculator) propagate(m Map) {
 		}
 	}
 
-	log.Print(mc.String())
+	// log.Print(mc.String())
 }
 
 func (mc MetricCalculator) Evaluate(s State) int {

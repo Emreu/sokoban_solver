@@ -154,7 +154,7 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 	s.findDeadZones()
 
 	log.Print("Preparing metric calc...")
-	s.metricCalc = NewMetricCalculator(s.Map)
+	s.metricCalc = NewMetricCalculator(s.Map, s.deadZones)
 
 	if debugOnly {
 		return nil

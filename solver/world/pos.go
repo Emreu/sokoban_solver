@@ -44,7 +44,17 @@ func (p Pos) MoveInDirection(d MoveDirection) Pos {
 }
 
 func (p Pos) MoveAgainstDirection(d MoveDirection) Pos {
-	return p.MoveInDirection(d).Mirror(p)
+	switch d {
+	case MoveUp:
+		return Pos{X: p.X, Y: p.Y + 1}
+	case MoveRight:
+		return Pos{X: p.X - 1, Y: p.Y}
+	case MoveDown:
+		return Pos{X: p.X, Y: p.Y - 1}
+	case MoveLeft:
+		return Pos{X: p.X + 1, Y: p.Y}
+	}
+	return p
 }
 
 func (p Pos) Mirror(center Pos) Pos {
