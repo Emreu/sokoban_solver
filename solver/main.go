@@ -13,6 +13,22 @@ import (
 	"github.com/emreu/sokoban_solver/solver/world"
 )
 
+func printTree(s *world.Solver, maxStates int) {
+	encoder := json.NewEncoder(os.Stdout)
+	nodes := s.GetTree()
+	os.Stdout.WriteString("[")
+	count := 0
+	for n := range nodes {
+		encoder.Encode(n)
+		count++
+		if maxStates > 0 && count > maxStates {
+			break
+		}
+		os.Stdout.WriteString(",")
+	}
+	os.Stdout.WriteString("]")
+}
+
 func directionToString(dir world.MoveDirection) string {
 	switch dir {
 	case world.MoveUp:
@@ -29,6 +45,8 @@ func directionToString(dir world.MoveDirection) string {
 
 func main() {
 	debug := flag.Bool("debug", false, "output debug info only in json format")
+	tree := flag.Bool("tree", false, "output state tree in json format")
+	maxStates := flag.Int("max", -1, "maximum number of states to output")
 	timeout := flag.Duration("timeout", time.Duration(0), "timeout for solver")
 	file := flag.String("f", "-", "file with map or - for stdin")
 	flag.Parse()
@@ -65,6 +83,10 @@ func main() {
 	log.Print("Starting solution...")
 	err = solver.Solve(ctx, *debug)
 	if err != nil {
+		if *tree {
+			log.Print("State tree:")
+			printTree(solver, *maxStates)
+		}
 		log.Fatalf("Solving error: %v", err)
 	}
 
@@ -78,6 +100,12 @@ func main() {
 	}
 
 	log.Print("Solved!")
+
+	if *tree {
+		log.Print("State tree:")
+		printTree(solver, *maxStates)
+		os.Exit(0)
+	}
 
 	path, err := solver.GetPath()
 	if err != nil {

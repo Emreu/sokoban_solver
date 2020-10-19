@@ -6,20 +6,51 @@ import (
 	"log"
 )
 
+const ExploreBatch = 4
+
 type Solver struct {
 	Map
-	deadZones  MoveDomain
-	root       *Node
-	solution   *Node
-	metricCalc MetricCalculator
-	Done       bool
+	deadZones     MoveDomain
+	root          *Node
+	solution      *Node
+	nodeHashIndex map[uint64]struct{}
+	metricCalc    MetricCalculator
+	Done          bool
+	nextID        int64
 }
 
 func NewSolver(m Map) *Solver {
 	return &Solver{
-		Map:       m,
-		deadZones: NewMoveDomain(),
+		Map:           m,
+		deadZones:     NewMoveDomain(),
+		nodeHashIndex: make(map[uint64]struct{}),
 	}
+}
+
+func mergeSorted(base, addition []*Node) []*Node {
+	var result = make([]*Node, len(base)+len(addition))
+	var i, j, k = 0, 0, 0
+	for i < len(base) && j < len(addition) {
+		if base[i].Metric < addition[j].Metric {
+			result[k] = base[i]
+			i++
+		} else {
+			result[k] = addition[j]
+			j++
+		}
+		k++
+	}
+	if i < len(base) {
+		copy(result[k:], base[i:])
+	} else {
+		copy(result[k:], addition[j:])
+	}
+	return result
+}
+
+func (s *Solver) getID() int64 {
+	s.nextID++
+	return s.nextID
 }
 
 // Find dead zones - positions from where it is impossible to move box to goal
@@ -168,6 +199,7 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 		BoxPositions: boxPositions,
 	}
 	root := NewNode(state)
+	root.ID = s.getID()
 	if !s.populateMoves(root) {
 		return fmt.Errorf("no moves available on init")
 	}
@@ -179,11 +211,15 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 
 	// do breadth first search
 	var exploreFrontier = []*Node{root}
+	var postponedFrontier = []*Node{root}
 
 	step := 0
 	for len(exploreFrontier) != 0 {
+		if err := c.Err(); err != nil {
+			return fmt.Errorf("timed out or canceled")
+		}
 		var nextFrontier []*Node
-		log.Printf("Exploring frontier #%d of %d nodes...", step, len(exploreFrontier))
+		log.Printf("Exploring frontier #%d of %d nodes (%d postponed)...", step, len(exploreFrontier), len(postponedFrontier))
 		for _, node := range exploreFrontier {
 			newNodes := s.exploreNode(node)
 			for _, n := range newNodes {
@@ -197,10 +233,21 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 				nextFrontier = append(nextFrontier, n)
 			}
 		}
-		exploreFrontier = nextFrontier
-		// TODO: add explore frontier limitation if its too large
-		// range nodes based on state estimation and explore only top-N nodes
-		// store best metric value for postponed nodes and reconsider them only if current frontier is too small or metrics of its nodes become worse
+
+		// make next frontier
+		fullFrontier := mergeSorted(postponedFrontier, nextFrontier)
+		if len(fullFrontier) > ExploreBatch {
+			exploreFrontier = fullFrontier[:ExploreBatch]
+			postponedFrontier = fullFrontier[ExploreBatch:]
+		} else {
+			exploreFrontier = fullFrontier
+			postponedFrontier = []*Node{}
+		}
+
+		if len(exploreFrontier) > 0 {
+			log.Printf("Best metric: %d", exploreFrontier[0].Metric)
+		}
+
 		step++
 	}
 
@@ -208,7 +255,7 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 	return nil
 }
 
-func (s Solver) exploreNode(n *Node) []*Node {
+func (s *Solver) exploreNode(n *Node) []*Node {
 	// log.Printf("Exploring node %p:", n)
 	var nextNodes []*Node
 	for move := range n.Moves {
@@ -226,13 +273,29 @@ func (s Solver) exploreNode(n *Node) []*Node {
 			BoxPositions: nextPositions,
 		}
 
-		// TODO: check if state is already indexed
-
 		// create node
 		node := NewNode(state)
+		node.ID = s.getID()
 		node.Parent = n
+
+		// check if state isn't indexed
+		if _, found := s.nodeHashIndex[node.Hash]; found {
+			log.Printf("Skipping indexed state")
+			continue
+		}
+		s.nodeHashIndex[node.Hash] = struct{}{}
+
+		// calculate metric
+		var err error
+		node.Metric, err = s.metricCalc.Evaluate(state)
+		if err != nil {
+			log.Printf("Failed state! Skipping...")
+			continue
+		}
+
 		s.populateMoves(node)
 		n.Moves[move] = node
+
 		nextNodes = append(nextNodes, node)
 	}
 
@@ -347,4 +410,26 @@ func (s Solver) GetDebug() SolverDebug {
 		DeadZones: dz,
 		Metrics:   metricList,
 	}
+}
+
+func (s Solver) GetTree() <-chan *Node {
+	output := make(chan *Node, 10)
+	var traverse func(*Node)
+
+	traverse = func(n *Node) {
+		if n == nil {
+			return
+		}
+		output <- n
+		for _, next := range n.Moves {
+			traverse(next)
+		}
+	}
+
+	go func() {
+		traverse(s.root)
+		close(output)
+	}()
+
+	return output
 }

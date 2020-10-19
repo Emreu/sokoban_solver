@@ -1,11 +1,16 @@
 package world
 
+import "encoding/json"
+
 type BoxMove struct {
 	BoxIndex  int
 	Direction MoveDirection
 }
 
 type Node struct {
+	ID     int64
+	Metric int
+	Hash   uint64
 	State
 	// Parent node for easy backward traverse
 	Parent *Node
@@ -15,9 +20,30 @@ type Node struct {
 
 func NewNode(s State) *Node {
 	return &Node{
-		State: s,
-		Moves: make(map[BoxMove]*Node),
+		Metric: -1,
+		Hash:   s.Hash(),
+		State:  s,
+		Moves:  make(map[BoxMove]*Node),
 	}
+}
+
+func (n Node) MarshalJSON() ([]byte, error) {
+	var N struct {
+		ID     int64 `json:"id"`
+		Parent int64 `json:"parent"`
+		Metric int   `json:"metric"`
+		Boxes  []Pos `json:"boxes"`
+		Domain []Pos `json:"domain"`
+	}
+	N.ID = n.ID
+	if n.Parent != nil {
+		N.Parent = n.Parent.ID
+	}
+	N.Metric = n.Metric
+	N.Boxes = n.State.BoxPositions
+	N.Domain = n.State.MoveDomain.ListPosition()
+
+	return json.Marshal(N)
 }
 
 // DeadEndNode represent constant reference for termination of dead end paths in search graphs

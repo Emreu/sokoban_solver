@@ -1,6 +1,9 @@
 package world
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 type Pos struct {
 	X int
@@ -62,4 +65,18 @@ func (p Pos) Mirror(center Pos) Pos {
 		X: 2*center.X - p.X,
 		Y: 2*center.Y - p.Y,
 	}
+}
+
+func SortedPositions(pos []Pos) []Pos {
+	sort.Slice(pos, func(i, j int) bool {
+		if pos[i].Y < pos[j].Y {
+			return true
+		} else if pos[i].Y > pos[j].Y {
+			return false
+		} else if pos[i].X < pos[j].X {
+			return true
+		}
+		return false
+	})
+	return pos
 }

@@ -3,6 +3,7 @@ package world
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 )
 
@@ -84,13 +85,72 @@ func (mc *MetricCalculator) propagate(m Map, deadzones MoveDomain) {
 	// log.Print(mc.String())
 }
 
-func (mc MetricCalculator) Evaluate(s State) int {
-	// TODO: implement
-	// for every box positions get corresponding cell
-	// sort box on cells based on best possible value
-	// eliminate goals double targeting by reassigning box to second best goals
-	// sum total value
-	return -1
+type boxGoal struct {
+	min     int
+	minGoal Pos
+	metrics map[Pos]int
+}
+
+func (bg *boxGoal) ExcludeGoal(g Pos) bool {
+	delete(bg.metrics, g)
+	// if no more goals available - state is failed
+	if len(bg.metrics) == 0 {
+		return false
+	}
+	bg.min = 99999
+	for pos, m := range bg.metrics {
+		if m < bg.min {
+			bg.min = m
+			bg.minGoal = pos
+		}
+	}
+	return true
+}
+
+func (mc MetricCalculator) Evaluate(s State) (int, error) {
+	var sortList []boxGoal
+	var total = 0
+
+boxes:
+	for _, pos := range s.BoxPositions {
+		bg := boxGoal{
+			min:     99999,
+			metrics: make(map[Pos]int),
+		}
+		for goalPos, metric := range mc.cells[pos.Y][pos.X].dist {
+			if metric == 0 {
+				// skip this box from sorting
+				continue boxes
+			}
+			bg.metrics[goalPos] = metric
+			if metric < bg.min {
+				bg.min = metric
+				bg.minGoal = goalPos
+			}
+		}
+		sortList = append(sortList, bg)
+	}
+
+	// eliminate boxes from sort list
+	for len(sortList) > 0 {
+		// sort boxes
+		sort.SliceStable(sortList, func(i, j int) bool {
+			return sortList[i].min < sortList[j].min
+		})
+
+		// remove first box and add up metric and disable goal
+		best := sortList[0]
+		total += best.min
+		sortList = sortList[1:len(sortList)]
+		for i := range sortList {
+			ok := sortList[i].ExcludeGoal(best.minGoal)
+			if !ok {
+				return -1, fmt.Errorf("failed state")
+			}
+		}
+	}
+
+	return total, nil
 }
 
 func (mc MetricCalculator) String() string {
