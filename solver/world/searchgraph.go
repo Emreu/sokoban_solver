@@ -29,17 +29,19 @@ func NewNode(s State) *Node {
 
 func (n Node) MarshalJSON() ([]byte, error) {
 	var N struct {
-		ID     int64 `json:"id"`
-		Parent int64 `json:"parent"`
-		Metric int   `json:"metric"`
-		Boxes  []Pos `json:"boxes"`
-		Domain []Pos `json:"domain"`
+		ID     int64  `json:"id"`
+		Parent int64  `json:"parent"`
+		Metric int    `json:"metric"`
+		Hash   uint64 `json:"hash"`
+		Boxes  []Pos  `json:"boxes"`
+		Domain []Pos  `json:"domain"`
 	}
 	N.ID = n.ID
 	if n.Parent != nil {
 		N.Parent = n.Parent.ID
 	}
 	N.Metric = n.Metric
+	N.Hash = n.Hash
 	N.Boxes = n.State.BoxPositions
 	N.Domain = n.State.MoveDomain.ListPosition()
 

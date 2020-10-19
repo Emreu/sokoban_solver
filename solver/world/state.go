@@ -7,17 +7,19 @@ type State struct {
 	BoxPositions []Pos
 }
 
+var hash maphash.Hash
+
 func (s State) Hash() uint64 {
-	var h maphash.Hash
+	hash.Reset()
 	// hash box positions
 	for _, pos := range SortedPositions(s.BoxPositions) {
-		h.WriteByte(byte(pos.X))
-		h.WriteByte(byte(pos.Y))
+		hash.WriteByte(byte(pos.X))
+		hash.WriteByte(byte(pos.Y))
 	}
 	// hash move domain
 	for _, pos := range SortedPositions(s.MoveDomain.ListPosition()) {
-		h.WriteByte(byte(pos.X))
-		h.WriteByte(byte(pos.Y))
+		hash.WriteByte(byte(pos.X))
+		hash.WriteByte(byte(pos.Y))
 	}
-	return h.Sum64()
+	return hash.Sum64()
 }

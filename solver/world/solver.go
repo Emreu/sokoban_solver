@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-const ExploreBatch = 4
+const ExploreBatch = 100
 
 type Solver struct {
 	Map
@@ -280,7 +280,6 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 
 		// check if state isn't indexed
 		if _, found := s.nodeHashIndex[node.Hash]; found {
-			log.Printf("Skipping indexed state")
 			continue
 		}
 		s.nodeHashIndex[node.Hash] = struct{}{}
@@ -289,7 +288,6 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 		var err error
 		node.Metric, err = s.metricCalc.Evaluate(state)
 		if err != nil {
-			log.Printf("Failed state! Skipping...")
 			continue
 		}
 

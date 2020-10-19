@@ -140,6 +140,7 @@ func DrawTree(states):
 		var item = $StateTreeWindow/Tree.create_item(parent)
 		item.collapsed = true
 		item.set_text(0, "state #" + String(state["id"]))
+		item.set_tooltip(0, String(state["hash"]))
 		item.set_text(1, String(state["metric"]))
 		var boxes = []
 		for box in state["boxes"]:
