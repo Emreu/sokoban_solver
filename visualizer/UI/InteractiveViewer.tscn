@@ -32,22 +32,28 @@ margin_right = 42.0
 margin_bottom = 20.0
 text = "Back"
 
-[node name="RunSolver" type="Button" parent="VBoxContainer/ButtonsBar"]
+[node name="Tree" type="Button" parent="VBoxContainer/ButtonsBar"]
 margin_left = 46.0
-margin_right = 92.0
+margin_right = 86.0
 margin_bottom = 20.0
-text = "Solve"
+text = "Tree"
+
+[node name="Debug" type="Button" parent="VBoxContainer/ButtonsBar"]
+margin_left = 90.0
+margin_right = 143.0
+margin_bottom = 20.0
+text = "Debug"
 
 [node name="DeadZones" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 96.0
-margin_right = 226.0
+margin_left = 147.0
+margin_right = 277.0
 margin_bottom = 20.0
 toggle_mode = true
 text = "Toggle dead zones"
 
 [node name="NoMetrics" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 230.0
-margin_right = 325.0
+margin_left = 281.0
+margin_right = 376.0
 margin_bottom = 20.0
 text = "Hide metrics"
 
@@ -109,9 +115,37 @@ margin_top = 556.0
 margin_right = 128.0
 margin_bottom = 576.0
 text = "Reset"
+
+[node name="StateTreeWindow" type="WindowDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = 303.623
+margin_top = 71.3192
+margin_right = 721.623
+margin_bottom = 511.319
+window_title = "Tree"
+resizable = true
+__meta__ = {
+"_edit_group_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="Tree" type="Tree" parent="StateTreeWindow"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Back" to="." method="_on_Back_pressed"]
-[connection signal="pressed" from="VBoxContainer/ButtonsBar/RunSolver" to="." method="_on_RunSolver_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonsBar/Tree" to="." method="_on_Tree_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonsBar/Debug" to="." method="_on_Debug_pressed"]
 [connection signal="toggled" from="VBoxContainer/ButtonsBar/DeadZones" to="." method="_on_DeadZones_toggled"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/NoMetrics" to="." method="_on_NoMetrics_pressed"]
 [connection signal="item_selected" from="VBoxContainer/HBoxContainer/RightPanel/Moves" to="." method="GotoMove"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/RightPanel/Reset" to="." method="_on_Reset_pressed"]
+[connection signal="item_selected" from="StateTreeWindow/Tree" to="." method="_on_Tree_item_selected"]

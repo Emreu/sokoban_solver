@@ -69,7 +69,7 @@ func GotoMove(index: int):
 	Moves.Select(currentMove)
 
 
-func _on_RunSolver_pressed():
+func _on_Debug_pressed():
 	var output = []
 	var exitCode = OS.execute("/home/emreu/otus/sokoban_solver/solver/solver.out", ["-f", levelPath, "-debug"], true, output)
 	print("exit code:" + String(exitCode))
@@ -114,3 +114,50 @@ func _on_DeadZones_toggled(button_pressed):
 
 func _on_NoMetrics_pressed():
 	Level.ShowMetrics({})
+
+
+func _on_Tree_pressed():
+	var output = []
+	var exitCode = OS.execute("/home/emreu/otus/sokoban_solver/solver/solver.out",
+		["-f", levelPath, "-tree", "-max", "1000", "-timeout", "10s"], true, output)
+	print("exit code:" + String(exitCode))
+	print(len(output))
+	
+	var res = JSON.parse(output[0])
+	if res.error != OK:
+		print("Can't parse json:" + res.error_string)
+		return
+	
+	DrawTree(res.result)
+	$StateTreeWindow.show()
+	
+func DrawTree(states):
+	var parents = {}
+	for state in states:
+		var parent = null
+		if state["parent"] > 0:
+			parent = parents[state.parent]
+		var item = $StateTreeWindow/Tree.create_item(parent)
+		item.collapsed = true
+		item.set_text(0, "state #" + String(state["id"]))
+		item.set_text(1, String(state["metric"]))
+		var boxes = []
+		for box in state["boxes"]:
+			boxes.append(Vector2(box["X"], box["Y"]))
+		item.set_metadata(0, boxes)
+		var domain = []
+		for pos in state["domain"]:
+			domain.append(Vector2(pos["X"], pos["Y"]))
+		item.set_metadata(1, domain)
+		parents[state["id"]] = item
+
+func _on_Tree_item_selected():
+	var item = $StateTreeWindow/Tree.get_selected()
+	if not item:
+		return
+	var boxes = item.get_metadata(0)
+	var domain = item.get_metadata(1)
+	
+	Level.SetState({"boxes": boxes})
+	Level.ShowDeadzones(domain)
+	

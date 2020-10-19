@@ -69,9 +69,12 @@ func GetState():
 	}
 	
 func SetState(state):
-	for box in state["boxes"]:
-		pass
-	pass
+	for i in range(len(state["boxes"])):
+		var box = $Boxes.get_child(i)
+		var pos = state["boxes"][i]
+		box.position = pos * tileSize 
+	if state.has("player"):
+		$Player.position = state["player"] * tileSize
 	
 func ShowDeadzones(positions):
 	for z in $Deadzones.get_children():

@@ -5,6 +5,7 @@ var currentIndex = -1
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	LoadMap("/home/emreu/otus/sokoban_solver/solver/test.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_1.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_2.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_3.txt")
