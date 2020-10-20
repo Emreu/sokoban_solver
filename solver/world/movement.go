@@ -60,55 +60,77 @@ func NewMoveDomainFromMap(m Map, boxPositions []Pos, start Pos) MoveDomain {
 	var perimeter = make(map[Pos]struct{})
 	perimeter[start] = struct{}{}
 	domain := NewMoveDomain()
+	boxes := Bitmap{}
 
-	var boxPos = make(map[Pos]struct{})
 	for _, pos := range boxPositions {
-		boxPos[pos] = struct{}{}
+		boxes.SetBit(pos)
 	}
 
-	var nextPerimeter = make(map[Pos]struct{})
-	for {
-		for pos := range perimeter {
-			// skip if this tile is wall
-			if m.AtPos(pos) == TileWall {
-				continue
-			}
-			// skip if tile is occupied by box
-			if _, occupied := boxPos[pos]; occupied {
-				// but save contact position
-				// domain.AddContacts(pos)
-				continue
-			}
-			// add tile to domain
-			domain.AddPosition(pos)
-			// schedule neighbour tiles for next perimeter
-			for _, p := range pos.Neighbours() {
-				// skip if out of map
-				if !m.IsInside(p) {
-					continue
-				}
-				// skip if already processing
-				if _, processing := perimeter[p]; processing {
-					continue
-				}
-				// skip if already scheduled
-				if _, scheduled := nextPerimeter[p]; scheduled {
-					continue
-				}
-				// skip if already in domain
-				if domain.HasPosition(p) {
-					continue
-				}
-				// finally add to next perimeter
-				nextPerimeter[p] = struct{}{}
-			}
+	var fill func(p Pos)
+	fill = func(p Pos) {
+		if !m.IsInside(p) {
+			return
 		}
-		if len(nextPerimeter) == 0 {
-			break
+		if m.AtPos(p) == TileWall {
+			return
 		}
-		perimeter = nextPerimeter
-		nextPerimeter = make(map[Pos]struct{})
+		if boxes.CheckBit(p) {
+			return
+		}
+		if domain.HasPosition(p) {
+			return
+		}
+		domain.AddPosition(p)
+		for _, n := range p.Neighbours() {
+			fill(n)
+		}
 	}
+
+	fill(start)
+
+	// var nextPerimeter = make(map[Pos]struct{})
+	// for {
+	// 	for pos := range perimeter {
+	// 		// skip if this tile is wall
+	// 		if m.AtPos(pos) == TileWall {
+	// 			continue
+	// 		}
+	// 		// skip if tile is occupied by box
+	// 		if _, occupied := boxPos[pos]; occupied {
+	// 			// but save contact position
+	// 			// domain.AddContacts(pos)
+	// 			continue
+	// 		}
+	// 		// add tile to domain
+	// 		domain.AddPosition(pos)
+	// 		// schedule neighbour tiles for next perimeter
+	// 		for _, p := range pos.Neighbours() {
+	// 			// skip if out of map
+	// 			if !m.IsInside(p) {
+	// 				continue
+	// 			}
+	// 			// skip if already processing
+	// 			if _, processing := perimeter[p]; processing {
+	// 				continue
+	// 			}
+	// 			// skip if already scheduled
+	// 			if _, scheduled := nextPerimeter[p]; scheduled {
+	// 				continue
+	// 			}
+	// 			// skip if already in domain
+	// 			if domain.HasPosition(p) {
+	// 				continue
+	// 			}
+	// 			// finally add to next perimeter
+	// 			nextPerimeter[p] = struct{}{}
+	// 		}
+	// 	}
+	// 	if len(nextPerimeter) == 0 {
+	// 		break
+	// 	}
+	// 	perimeter = nextPerimeter
+	// 	nextPerimeter = make(map[Pos]struct{})
+	// }
 
 	return domain
 }
