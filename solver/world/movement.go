@@ -44,14 +44,14 @@ func (d MoveDirection) RotateCCW() MoveDirection {
 }
 
 type MoveDomain struct {
-	tiles map[Pos]struct{} // simple implementation
-	// contacts map[Pos]struct{}
+	// tiles map[Pos]struct{} // simple implementation
+	bitmap Bitmap
 }
 
 func NewMoveDomain() MoveDomain {
 	return MoveDomain{
-		tiles: make(map[Pos]struct{}),
-		// contacts: make(map[Pos]struct{}),
+		// tiles: make(map[Pos]struct{}),
+		bitmap: Bitmap{},
 	}
 }
 
@@ -114,26 +114,39 @@ func NewMoveDomainFromMap(m Map, boxPositions []Pos, start Pos) MoveDomain {
 }
 
 func (md *MoveDomain) HasPosition(pos Pos) bool {
-	_, exists := md.tiles[pos]
-	return exists
+	return md.bitmap.CheckBit(pos)
+	// _, exists := md.tiles[pos]
+	// return exists
 }
 
 func (md *MoveDomain) AddPosition(pos Pos) {
-	md.tiles[pos] = struct{}{}
+	md.bitmap.SetBit(pos)
+	// md.tiles[pos] = struct{}{}
 }
 
 func (md *MoveDomain) ListPosition() []Pos {
-	var pos []Pos
-	for p := range md.tiles {
-		pos = append(pos, p)
-	}
-	return pos
+	return md.bitmap.List()
+	// var pos []Pos
+	// for p := range md.tiles {
+	// 	pos = append(pos, p)
+	// }
+	// return pos
+}
+
+func (md MoveDomain) HashBytes() []byte {
+	return md.bitmap.HashBytes()
+	// var res []byte
+	// for _, pos := range SortedPositions(md.ListPosition()) {
+	// 	res = append(res, byte(pos.X), byte(pos.Y))
+	// }
+	// return res
 }
 
 func (md MoveDomain) String() string {
 	buf := &strings.Builder{}
 	buf.WriteString("MoveDomain{")
-	for pos := range md.tiles {
+	// for pos := range md.tiles {
+	for _, pos := range md.bitmap.List() {
 		buf.WriteString(pos.String())
 	}
 	buf.WriteString("}")

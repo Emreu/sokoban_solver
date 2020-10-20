@@ -17,9 +17,6 @@ func (s State) Hash() uint64 {
 		hash.WriteByte(byte(pos.Y))
 	}
 	// hash move domain
-	for _, pos := range SortedPositions(s.MoveDomain.ListPosition()) {
-		hash.WriteByte(byte(pos.X))
-		hash.WriteByte(byte(pos.Y))
-	}
+	hash.Write(s.MoveDomain.HashBytes())
 	return hash.Sum64()
 }
