@@ -6,7 +6,7 @@ var wall = preload("res://Objects/Wall.tscn")
 
 var zone = preload("res://Objects/Deadzone.tscn")
 
-const tileSize = Vector2(16, 16)
+const tileSize = Vector2(64, 64)
 
 signal win
 
@@ -51,7 +51,7 @@ func Load(level):
 		b.position = tileSize * pos
 		$Boxes.add_child(b, true)
 	# position camera
-	$Camera.zoom = Vector2(0.5,0.5)
+	#$Camera.zoom = Vector2(0.5,0.5)
 
 func TryMove(dir):
 	var moved = $Player.Move(dir)

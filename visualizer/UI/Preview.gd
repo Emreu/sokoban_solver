@@ -41,23 +41,33 @@ func tileAt(pos, level):
 	return "empty"
 
 func makeTexture(w, h, level):
-	if level.has("preview"):
-		return level["preview"]
 	var img = Image.new()
-	img.create(w*tile_size, h*tile_size, false, Image.FORMAT_RGB8)
+	var size = max(w,h)
+	img.create(size*tile_size, size*tile_size, false, Image.FORMAT_RGB8)
+	var shift = Vector2(0,0)
+	if w > h:
+		var delta = (w-h)/2 * tile_size
+		shift = Vector2(0,delta)
+	elif h > w:
+		var delta = (h-w)/2 * tile_size
+		shift = Vector2(delta,0)
 	
 	for y in range(h):
 		for x in range(w):
 			var pos = Vector2(x, y)
 			var tile = tileAt(pos, level)
-			img.blit_rect(tiles, Rect2(offset[tile]*tile_size, 0, 8, 8), Vector2(pos.x*tile_size, pos.y*tile_size))
+			img.blit_rect(tiles, Rect2(offset[tile]*tile_size, 0, 8, 8), shift+Vector2(pos.x*tile_size, pos.y*tile_size))
 			
 	var tex = ImageTexture.new()
 	tex.create_from_image(img, 0)
-	level["preview"] = tex
+	
 	return tex
 
 func ShowLevel(level):
+	if level.has("preview"):
+		texture = level["preview"]
+		return
+		
 	var w = 0
 	var h = 0
 	for pos in level["walls"]:
@@ -66,5 +76,6 @@ func ShowLevel(level):
 		if pos.y > h:
 			h = pos.y
 	var tex = makeTexture(w+1,h+1,level)
+	level["preview"] = tex
 	texture = tex
 

@@ -1,7 +1,7 @@
 extends KinematicBody2D
 
 export var DirectControl = true
-var tile_size = 16
+var tile_size = 64
 onready var ray = $RayCast2D
 
 

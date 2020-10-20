@@ -5,5 +5,5 @@
 [node name="Deadzone" type="Node2D"]
 
 [node name="sprite" type="Sprite" parent="."]
-position = Vector2( 8, 8 )
+position = Vector2( 32, 32 )
 texture = ExtResource( 1 )

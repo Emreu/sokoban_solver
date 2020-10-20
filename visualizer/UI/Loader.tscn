@@ -82,13 +82,6 @@ margin_right = 638.034
 margin_bottom = 71.5763
 text = "Preview"
 
-[node name="NewMapButton" type="Button" parent="LoaderUI"]
-margin_left = 52.857
-margin_top = 494.59
-margin_right = 92.857
-margin_bottom = 514.59
-text = "New"
-
 [node name="MapLoadButton" type="Button" parent="LoaderUI"]
 margin_left = 150.076
 margin_top = 495.534
@@ -96,19 +89,15 @@ margin_right = 251.076
 margin_bottom = 515.534
 text = "Read from file"
 
-[node name="MapEditButton" type="Button" parent="LoaderUI"]
-margin_left = 723.952
-margin_top = 359.616
-margin_right = 824.952
-margin_bottom = 379.616
-text = "Edit"
-
 [node name="PlayButton" type="Button" parent="LoaderUI"]
-margin_left = 605.024
-margin_top = 356.784
-margin_right = 706.024
-margin_bottom = 376.784
+margin_left = 668.052
+margin_top = 354.406
+margin_right = 769.052
+margin_bottom = 374.406
 text = "Play"
+__meta__ = {
+"_edit_use_anchors_": false
+}
 [connection signal="exit" from="Viewer" to="." method="_on_Viewer_exit"]
 [connection signal="file_selected" from="LoaderUI/FileDialog" to="." method="_on_FileDialog_file_selected"]
 [connection signal="item_selected" from="LoaderUI/LevelsList" to="." method="_on_LevelsList_item_selected"]

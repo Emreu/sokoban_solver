@@ -1,6 +1,6 @@
 extends KinematicBody2D
 
-var tile_size = 16
+var tile_size = 64
 onready var ray = $RayCast2D
 
 func move(dir):
