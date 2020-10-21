@@ -38,22 +38,28 @@ margin_right = 86.0
 margin_bottom = 20.0
 text = "Tree"
 
-[node name="Debug" type="Button" parent="VBoxContainer/ButtonsBar"]
+[node name="Solve" type="Button" parent="VBoxContainer/ButtonsBar"]
 margin_left = 90.0
-margin_right = 143.0
+margin_right = 136.0
+margin_bottom = 20.0
+text = "Solve"
+
+[node name="Debug" type="Button" parent="VBoxContainer/ButtonsBar"]
+margin_left = 140.0
+margin_right = 193.0
 margin_bottom = 20.0
 text = "Debug"
 
 [node name="DeadZones" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 147.0
-margin_right = 277.0
+margin_left = 197.0
+margin_right = 327.0
 margin_bottom = 20.0
 toggle_mode = true
 text = "Toggle dead zones"
 
 [node name="NoMetrics" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 281.0
-margin_right = 376.0
+margin_left = 331.0
+margin_right = 426.0
 margin_bottom = 20.0
 text = "Hide metrics"
 
@@ -143,6 +149,7 @@ __meta__ = {
 }
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Back" to="." method="_on_Back_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Tree" to="." method="_on_Tree_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonsBar/Solve" to="." method="_on_Solve_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Debug" to="." method="_on_Debug_pressed"]
 [connection signal="toggled" from="VBoxContainer/ButtonsBar/DeadZones" to="." method="_on_DeadZones_toggled"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/NoMetrics" to="." method="_on_NoMetrics_pressed"]

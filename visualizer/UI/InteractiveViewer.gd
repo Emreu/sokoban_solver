@@ -162,3 +162,34 @@ func _on_Tree_item_selected():
 	Level.SetState({"boxes": boxes})
 	Level.ShowDeadzones(domain)
 	
+
+
+func _on_Solve_pressed():
+	_on_Reset_pressed()
+	var output = []
+	var exitCode = OS.execute("/home/emreu/otus/sokoban_solver/solver/solver.out",
+		["-f", levelPath, "-timeout", "10s"], true, output)
+	print("exit code:" + String(exitCode))
+	print(output)
+	
+	for c in output[0]:
+		match c:
+			"^":
+				DoMove(Common.Direction.UP)
+#				moves.append()
+#				Moves.Append(Common.Direction.UP)
+			">":
+				DoMove(Common.Direction.RIGHT)
+#				moves.append(Common.Direction.RIGHT)
+#				Moves.Append(Common.Direction.RIGHT)
+			"V":
+				DoMove(Common.Direction.DOWN)
+#				moves.append(Common.Direction.DOWN)
+#				Moves.Append(Common.Direction.DOWN)
+			"<":
+				DoMove(Common.Direction.LEFT)
+#				moves.append(Common.Direction.LEFT)
+#				Moves.Append(Common.Direction.LEFT)
+		yield(get_tree(),"idle_frame")
+	
+	
