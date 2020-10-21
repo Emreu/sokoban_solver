@@ -359,7 +359,7 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 	if !s.Done {
 		return nil, fmt.Errorf("call Solve() before GetPath()")
 	}
-	// TODO: traverse search graph from solution node back to root
+	var path []MoveDirection
 	current := s.solution
 	previous := current.Parent
 	for previous != nil {
@@ -368,13 +368,24 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 				continue
 			}
 			log.Printf("Move #%d %s", move.BoxIndex, move.Direction)
+			// find directions
+			segment, err := FindDirections()
+			if err != nil {
+				return nil, fmt.Errorf("path finding error: %v", err)
+			}
+			// add box push movement
+			segment = append(segment, move.Direction)
 		}
 		current = previous
 		previous = current.Parent
 	}
-	// TODO: use A* to generate path from state to state (in move domain only)
+	// finally find directions from start position to first box move
+	segment, err := FindDirections(current.MoveDomain, s.Map.StartPos())
+	if err != nil {
+		return nil, fmt.Errorf("path finding error: %v", err)
+	}
 	// reverse path
-	return []MoveDirection{MoveUp, MoveDown, MoveLeft, MoveRight}, nil
+	return path, nil
 }
 
 type SolverDebug struct {

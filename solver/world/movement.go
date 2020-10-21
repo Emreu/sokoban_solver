@@ -13,6 +13,8 @@ const (
 	MoveLeft
 )
 
+var AllDirections = []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft}
+
 func (d MoveDirection) String() string {
 	switch d {
 	case MoveUp:
