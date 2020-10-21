@@ -9,6 +9,7 @@ func _ready():
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_1.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_2.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_3.txt")
+	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_4.txt")
 	pass # Replace with function body.
 
 func LoadMap(path):

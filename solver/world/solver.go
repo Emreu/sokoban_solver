@@ -219,7 +219,7 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 			return fmt.Errorf("timed out or canceled")
 		}
 		var nextFrontier []*Node
-		// log.Printf("Exploring frontier #%d of %d nodes (%d postponed)...", step, len(exploreFrontier), len(postponedFrontier))
+		log.Printf("Exploring frontier #%d of %d nodes (%d postponed)...", step, len(exploreFrontier), len(postponedFrontier))
 		for _, node := range exploreFrontier {
 			newNodes := s.exploreNode(node)
 			for _, n := range newNodes {
@@ -244,9 +244,9 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 			postponedFrontier = []*Node{}
 		}
 
-		// if len(exploreFrontier) > 0 {
-		// 	log.Printf("Best metric: %d", exploreFrontier[0].Metric)
-		// }
+		if len(exploreFrontier) > 0 {
+			log.Printf("Best metric: %d", exploreFrontier[0].Metric)
+		}
 
 		step++
 	}
