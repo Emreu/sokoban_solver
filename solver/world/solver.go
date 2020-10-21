@@ -362,29 +362,55 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 	var path []MoveDirection
 	current := s.solution
 	previous := current.Parent
+	var dest Pos
+	lastState := true
+
 	for previous != nil {
-		for move := range previous.Moves {
-			if previous.Moves[move] != current {
-				continue
+		var move BoxMove
+		moveFound := false
+		for m := range previous.Moves {
+			if previous.Moves[m] == current {
+				move = m
+				moveFound = true
+				break
 			}
-			log.Printf("Move #%d %s", move.BoxIndex, move.Direction)
-			// find directions
-			segment, err := FindDirections()
+		}
+		if !moveFound {
+			return nil, fmt.Errorf("incorrect state tree!")
+		}
+		// log.Printf("Move #%d %s", move.BoxIndex, move.Direction)
+
+		// start from where box was before move apply
+		start := previous.BoxPositions[move.BoxIndex]
+		if !lastState {
+			// do transition to next destination if it's not last state
+			var err error
+			segment, err := FindDirections(current.MoveDomain, start, dest)
 			if err != nil {
 				return nil, fmt.Errorf("path finding error: %v", err)
 			}
-			// add box push movement
-			segment = append(segment, move.Direction)
+			if len(segment) > 0 {
+				path = append(segment, path...)
+			}
 		}
+		lastState = false
+
+		// add move to path
+		path = append([]MoveDirection{move.Direction}, path...)
+
+		// save destination for next (previous ?_?) transition - tile before box
+		dest = start.MoveAgainstDirection(move.Direction)
+
+		// advance states
 		current = previous
 		previous = current.Parent
 	}
 	// finally find directions from start position to first box move
-	segment, err := FindDirections(current.MoveDomain, s.Map.StartPos())
+	segment, err := FindDirections(current.MoveDomain, s.Map.StartPos(), dest)
 	if err != nil {
 		return nil, fmt.Errorf("path finding error: %v", err)
 	}
-	// reverse path
+	path = append(segment, path...)
 	return path, nil
 }
 

@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"sort"
 )
 
 func manhattan(from, to Pos) int {
@@ -52,26 +53,27 @@ func FindDirections(domain MoveDomain, from, to Pos) ([]MoveDirection, error) {
 	g := make(map[Pos]int)
 	f := make(map[Pos]int)
 
-	addToExplore := func(p Pos) {
-		if len(explore) == 0 {
-			explore = []Pos{p}
-		}
-		// do binary search to find insertion index
-		threshold := f[p]
-		i := 0
-		j := len(explore) - 1
-		for i < j {
-			c := (i + j) / 2
-			if f[explore[c]] < threshold {
-				i = c
-			} else {
-				j = c
-			}
-		}
-		explore = append(explore, Pos{})
-		copy(explore[i+1:], explore[i:])
-		explore[i] = p
-	}
+	// addToExplore := func(p Pos) {
+	// 	if len(explore) == 0 {
+	// 		explore = []Pos{p}
+	// 		return
+	// 	}
+	// 	// do binary search to find insertion index
+	// 	threshold := f[p]
+	// 	i := 0
+	// 	j := len(explore) - 1
+	// 	for i < j {
+	// 		c := (i + j) / 2
+	// 		if f[explore[c]] < threshold {
+	// 			i = c
+	// 		} else {
+	// 			j = c
+	// 		}
+	// 	}
+	// 	explore = append(explore, Pos{})
+	// 	copy(explore[i+1:], explore[i:])
+	// 	explore[i] = p
+	// }
 
 	g[from] = 0
 	f[from] = manhattan(from, to)
@@ -102,8 +104,15 @@ func FindDirections(domain MoveDomain, from, to Pos) ([]MoveDirection, error) {
 			g[neighbour] = total
 			f[neighbour] = total + manhattan(neighbour, to)
 			// add to explore
-			addToExplore(neighbour)
+			// addToExplore(neighbour)
+			// XXX: temporary fix until bsearch repair
+			explore = append(explore, neighbour)
 		}
+
+		// TODO: remove after bsearch repair
+		sort.Slice(explore, func(i, j int) bool {
+			return f[explore[i]] < f[explore[j]]
+		})
 	}
 
 	return nil, fmt.Errorf("path not exists")
