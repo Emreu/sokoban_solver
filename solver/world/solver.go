@@ -176,7 +176,7 @@ func (s *Solver) findDeadZones() {
 	log.Printf("Deadzones (with propagation): %s", s.deadZones)
 }
 
-func (s *Solver) Solve(c context.Context, debugOnly bool) error {
+func (s *Solver) Solve(c context.Context) error {
 	if s.Done {
 		return nil
 	}
@@ -186,10 +186,6 @@ func (s *Solver) Solve(c context.Context, debugOnly bool) error {
 
 	log.Print("Preparing metric calc...")
 	s.metricCalc = NewMetricCalculator(s.Map, s.deadZones)
-
-	if debugOnly {
-		return nil
-	}
 
 	// initialize
 	log.Print("Initializing...")
@@ -447,24 +443,24 @@ func (s Solver) GetDebug() SolverDebug {
 	}
 }
 
-func (s Solver) GetTree() <-chan *Node {
-	output := make(chan *Node, 10)
+func (s Solver) GetTree(max int) []*Node {
+	var output []*Node
 	var traverse func(*Node)
 
 	traverse = func(n *Node) {
 		if n == nil {
 			return
 		}
-		output <- n
+		if max > 0 && len(output) > max {
+			return
+		}
+		output = append(output, n)
 		for _, next := range n.Moves {
 			traverse(next)
 		}
 	}
 
-	go func() {
-		traverse(s.root)
-		close(output)
-	}()
+	traverse(s.root)
 
 	return output
 }

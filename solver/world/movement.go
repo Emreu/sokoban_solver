@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -27,6 +28,20 @@ func (d MoveDirection) String() string {
 		return "left"
 	}
 	return "???"
+}
+
+func (d MoveDirection) MarshalJSON() ([]byte, error) {
+	switch d {
+	case MoveUp:
+		return []byte(`"^"`), nil
+	case MoveRight:
+		return []byte(`">"`), nil
+	case MoveLeft:
+		return []byte(`"<"`), nil
+	case MoveDown:
+		return []byte(`"V"`), nil
+	}
+	return nil, fmt.Errorf("unknown direction: %d", d)
 }
 
 func (d MoveDirection) RotateCW() MoveDirection {
