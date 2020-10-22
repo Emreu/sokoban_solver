@@ -10,6 +10,8 @@ func _ready():
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_2.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_3.txt")
 	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_4.txt")
+	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_5.txt")
+	LoadMap("/home/emreu/otus/sokoban_solver/solver/test_6.txt")
 	pass # Replace with function body.
 
 func LoadMap(path):
@@ -64,6 +66,7 @@ func parseLevel(chars):
 		"goals": goals,
 		"boxes": boxes,
 		"start": start,
+		"source": chars,
 	}
 
 func _on_MapLoadButton_pressed():

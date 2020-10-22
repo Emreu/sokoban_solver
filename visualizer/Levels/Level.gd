@@ -8,9 +8,15 @@ var zone = preload("res://Objects/Deadzone.tscn")
 
 const tileSize = Vector2(64, 64)
 
+var metricFont
+
 signal win
 
 func _ready():
+	metricFont = DynamicFont.new()
+	metricFont.font_data = preload("res://assets/KarmaFuture.ttf")
+	metricFont.size = 32
+	
 	var level = {
 		"walls": [Vector2(2,2)],
 		"goals": [Vector2(3,3)],
@@ -98,6 +104,7 @@ func ShowMetrics(metrics):
 		m.queue_free()
 	for pos in metrics:
 		var m = Label.new()
+		m.set("custom_fonts/font", metricFont)
 		m.text = String(metrics[pos])
 		m.rect_position = tileSize * pos
 		$Metrics.add_child(m, true)

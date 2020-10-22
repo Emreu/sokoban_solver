@@ -18,6 +18,7 @@ script = ExtResource( 1 )
 DirectControl = false
 
 [node name="Metrics" type="Node2D" parent="."]
+modulate = Color( 1, 0.0235294, 0.870588, 1 )
 
 [node name="Camera" type="Camera2D" parent="."]
 anchor_mode = 0

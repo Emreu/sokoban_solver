@@ -1,14 +1,15 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://UI/InteractiveViewer.gd" type="Script" id=1]
 [ext_resource path="res://UI/MovesList.gd" type="Script" id=2]
 [ext_resource path="res://Levels/Generic.tscn" type="PackedScene" id=3]
+[ext_resource path="res://UI/SettingsWindow.gd" type="Script" id=4]
 
 [node name="Viewer" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = -1024.0
-margin_bottom = -600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -17,8 +18,8 @@ __meta__ = {
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_right = 1024.0
-margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -32,35 +33,44 @@ margin_right = 42.0
 margin_bottom = 20.0
 text = "Back"
 
-[node name="Tree" type="Button" parent="VBoxContainer/ButtonsBar"]
+[node name="Settings" type="Button" parent="VBoxContainer/ButtonsBar"]
 margin_left = 46.0
-margin_right = 86.0
+margin_right = 109.0
 margin_bottom = 20.0
-text = "Tree"
+text = "Settings"
 
 [node name="Solve" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 90.0
-margin_right = 136.0
+margin_left = 113.0
+margin_right = 159.0
 margin_bottom = 20.0
 text = "Solve"
 
-[node name="Debug" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 140.0
-margin_right = 193.0
+[node name="Tree" type="Button" parent="VBoxContainer/ButtonsBar" groups=[
+"default_disabled",
+]]
+margin_left = 163.0
+margin_right = 203.0
 margin_bottom = 20.0
-text = "Debug"
+disabled = true
+text = "Tree"
 
-[node name="DeadZones" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 197.0
-margin_right = 327.0
+[node name="DeadZones" type="Button" parent="VBoxContainer/ButtonsBar" groups=[
+"default_disabled",
+]]
+margin_left = 207.0
+margin_right = 337.0
 margin_bottom = 20.0
+disabled = true
 toggle_mode = true
 text = "Toggle dead zones"
 
-[node name="NoMetrics" type="Button" parent="VBoxContainer/ButtonsBar"]
-margin_left = 331.0
-margin_right = 426.0
+[node name="NoMetrics" type="Button" parent="VBoxContainer/ButtonsBar" groups=[
+"default_disabled",
+]]
+margin_left = 341.0
+margin_right = 436.0
 margin_bottom = 20.0
+disabled = true
 text = "Hide metrics"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
@@ -103,12 +113,7 @@ margin_bottom = 576.0
 rect_min_size = Vector2( 128, 0 )
 size_flags_vertical = 3
 
-[node name="CurMove" type="Label" parent="VBoxContainer/HBoxContainer/RightPanel"]
-margin_right = 128.0
-margin_bottom = 14.0
-
 [node name="Moves" type="ItemList" parent="VBoxContainer/HBoxContainer/RightPanel"]
-margin_top = 18.0
 margin_right = 128.0
 margin_bottom = 552.0
 focus_mode = 0
@@ -127,10 +132,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-margin_left = 303.623
-margin_top = 71.3192
-margin_right = 721.623
-margin_bottom = 511.319
+margin_left = -198.277
+margin_top = -215.671
+margin_right = 219.723
+margin_bottom = 224.328
 window_title = "Tree"
 resizable = true
 __meta__ = {
@@ -147,12 +152,128 @@ columns = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="SettingsWindow" type="WindowDialog" parent="."]
+margin_left = 192.0
+margin_top = 128.0
+margin_right = 640.0
+margin_bottom = 410.0
+popup_exclusive = true
+window_title = "Settings"
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 8.0
+margin_right = 64.0
+margin_bottom = 32.0
+text = "Server:"
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="URLEdit" type="LineEdit" parent="SettingsWindow"]
+margin_left = 72.0
+margin_top = 8.0
+margin_right = 432.0
+margin_bottom = 32.0
+text = "localhost:3000"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Deadzones" type="CheckBox" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 48.0
+margin_right = 115.0
+margin_bottom = 72.0
+pressed = true
+text = "Deadzones"
+
+[node name="Metrics" type="CheckBox" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 80.0
+margin_right = 115.0
+margin_bottom = 104.0
+pressed = true
+text = "Metric"
+
+[node name="States" type="CheckBox" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 112.0
+margin_right = 115.0
+margin_bottom = 136.0
+pressed = true
+text = "States tree"
+
+[node name="TimeoutLabel" type="Label" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 144.0
+margin_right = 384.0
+margin_bottom = 168.0
+text = "Timeout: unlimited"
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TimeoutSlider" type="HSlider" parent="SettingsWindow"]
+margin_left = 16.0
+margin_top = 176.0
+margin_right = 432.0
+margin_bottom = 192.0
+min_value = 1.0
+max_value = 300.0
+value = 300.0
+exp_edit = true
+rounded = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="MaxStates" type="SpinBox" parent="SettingsWindow"]
+margin_left = 256.0
+margin_top = 112.0
+margin_right = 330.0
+margin_bottom = 136.0
+min_value = 1.0
+max_value = 1000.0
+value = 1000.0
+rounded = true
+allow_greater = true
+
+[node name="Label3" type="Label" parent="SettingsWindow"]
+margin_left = 168.0
+margin_top = 112.0
+margin_right = 249.0
+margin_bottom = 136.0
+text = "Max states:"
+valign = 1
+
+[node name="OkButton" type="Button" parent="SettingsWindow"]
+margin_left = 192.0
+margin_top = 232.0
+margin_right = 256.0
+margin_bottom = 256.0
+text = "Ok"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HTTPRequest" type="HTTPRequest" parent="."]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Back" to="." method="_on_Back_pressed"]
-[connection signal="pressed" from="VBoxContainer/ButtonsBar/Tree" to="." method="_on_Tree_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonsBar/Settings" to="." method="_on_Settings_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Solve" to="." method="_on_Solve_pressed"]
-[connection signal="pressed" from="VBoxContainer/ButtonsBar/Debug" to="." method="_on_Debug_pressed"]
+[connection signal="pressed" from="VBoxContainer/ButtonsBar/Tree" to="." method="_on_Tree_pressed"]
 [connection signal="toggled" from="VBoxContainer/ButtonsBar/DeadZones" to="." method="_on_DeadZones_toggled"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/NoMetrics" to="." method="_on_NoMetrics_pressed"]
-[connection signal="item_selected" from="VBoxContainer/HBoxContainer/RightPanel/Moves" to="." method="GotoMove"]
+[connection signal="item_selected" from="VBoxContainer/HBoxContainer/RightPanel/Moves" to="." method="GotoState"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/RightPanel/Reset" to="." method="_on_Reset_pressed"]
 [connection signal="item_selected" from="StateTreeWindow/Tree" to="." method="_on_Tree_item_selected"]
+[connection signal="value_changed" from="SettingsWindow/TimeoutSlider" to="SettingsWindow" method="_on_TimeoutSlider_value_changed"]
+[connection signal="pressed" from="SettingsWindow/OkButton" to="SettingsWindow" method="_on_Button_pressed"]
+[connection signal="request_completed" from="HTTPRequest" to="." method="_on_HTTPRequest_request_completed"]
