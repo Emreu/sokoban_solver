@@ -7,10 +7,19 @@ type BoxMove struct {
 	Direction MoveDirection
 }
 
+type NodeFail int
+
+const (
+	NodeOK NodeFail = iota
+	NodeDuplicate
+	NodeInvalid
+)
+
 type Node struct {
 	ID     int64
 	Metric int
 	Hash   uint64
+	Fail   NodeFail
 	State
 	// Parent node for easy backward traverse
 	Parent *Node
@@ -35,6 +44,7 @@ func (n Node) MarshalJSON() ([]byte, error) {
 		Hash   uint64 `json:"hash"`
 		Boxes  []Pos  `json:"boxes"`
 		Domain []Pos  `json:"domain"`
+		Fail   string `json:"fail,omitempty"`
 	}
 	N.ID = n.ID
 	if n.Parent != nil {
@@ -44,6 +54,12 @@ func (n Node) MarshalJSON() ([]byte, error) {
 	N.Hash = n.Hash
 	N.Boxes = n.State.BoxPositions
 	N.Domain = n.State.MoveDomain.ListPosition()
+	switch n.Fail {
+	case NodeDuplicate:
+		N.Fail = "duplicate"
+	case NodeInvalid:
+		N.Fail = "invalid"
+	}
 
 	return json.Marshal(N)
 }

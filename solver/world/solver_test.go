@@ -31,7 +31,7 @@ func TestSolver(t *testing.T) {
 
 	ctx := context.Background()
 
-	err = solver.Solve(ctx, false)
+	err = solver.Solve(ctx)
 	if err != nil {
 		t.Fatalf("Solving error: %v", err)
 	}

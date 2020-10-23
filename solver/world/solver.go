@@ -207,7 +207,7 @@ func (s *Solver) Solve(c context.Context) error {
 
 	// do breadth first search
 	var exploreFrontier = []*Node{root}
-	var postponedFrontier = []*Node{root}
+	var postponedFrontier = []*Node{}
 
 	step := 0
 	for len(exploreFrontier) != 0 {
@@ -276,6 +276,8 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 
 		// check if state isn't indexed
 		if _, found := s.nodeHashIndex[node.Hash]; found {
+			node.Fail = NodeDuplicate
+			n.Moves[move] = node
 			continue
 		}
 		s.nodeHashIndex[node.Hash] = struct{}{}
@@ -284,6 +286,8 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 		var err error
 		node.Metric, err = s.metricCalc.Evaluate(state)
 		if err != nil {
+			node.Fail = NodeInvalid
+			n.Moves[move] = node
 			continue
 		}
 
@@ -445,22 +449,22 @@ func (s Solver) GetDebug() SolverDebug {
 
 func (s Solver) GetTree(max int) []*Node {
 	var output []*Node
-	var traverse func(*Node)
 
-	traverse = func(n *Node) {
-		if n == nil {
-			return
+	var frontier = []*Node{s.root}
+
+	for len(frontier) > 0 && (max == 0 || len(output) < max) {
+		var nextFrontier []*Node
+		for _, n := range frontier {
+			output = append(output, n)
+			for _, next := range n.Moves {
+				if next == nil {
+					continue
+				}
+				nextFrontier = append(nextFrontier, next)
+			}
 		}
-		if max > 0 && len(output) > max {
-			return
-		}
-		output = append(output, n)
-		for _, next := range n.Moves {
-			traverse(next)
-		}
+		frontier = nextFrontier
 	}
-
-	traverse(s.root)
 
 	return output
 }

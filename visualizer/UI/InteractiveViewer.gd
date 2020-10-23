@@ -105,6 +105,8 @@ func DrawTree(states):
 		item.set_text(0, "state #" + String(state["id"]))
 		item.set_tooltip(0, String(state["hash"]))
 		item.set_text(1, String(state["metric"]))
+		if state.has("fail"):
+			item.set_text(2, String(state["fail"]))
 		var boxes = []
 		for box in state["boxes"]:
 			boxes.append(Vector2(box["X"], box["Y"]))
