@@ -1,20 +1,22 @@
 package world
 
-import "hash/maphash"
+import (
+	"hash/fnv"
+)
 
 type State struct {
 	MoveDomain
 	BoxPositions []Pos
 }
 
-var hash maphash.Hash
+var hash = fnv.New64()
 
 func (s State) Hash() uint64 {
 	hash.Reset()
 	// hash box positions
 	for _, pos := range SortedPositions(s.BoxPositions) {
-		hash.WriteByte(byte(pos.X))
-		hash.WriteByte(byte(pos.Y))
+		hash.Write([]byte{byte(pos.X)})
+		hash.Write([]byte{byte(pos.Y)})
 	}
 	// hash move domain
 	hash.Write(s.MoveDomain.HashBytes())
