@@ -10,19 +10,18 @@ const ExploreBatch = 200
 
 type Solver struct {
 	Map
-	deadZones     MoveDomain
+	deadZones     Bitmap
 	root          *Node
 	solution      *Node
 	nodeHashIndex map[uint64]struct{}
 	metricCalc    MetricCalculator
-	Done          bool
 	nextID        int64
 }
 
 func NewSolver(m Map) *Solver {
 	return &Solver{
 		Map:           m,
-		deadZones:     NewMoveDomain(),
+		deadZones:     Bitmap{},
 		nodeHashIndex: make(map[uint64]struct{}),
 	}
 }
@@ -67,11 +66,11 @@ func (s *Solver) findDeadZones() {
 			return
 		}
 		// don't add if already added
-		if s.deadZones.HasPosition(pos) {
+		if s.deadZones.CheckBit(pos) {
 			return
 		}
 		deadCorners = append(deadCorners, pos)
-		s.deadZones.AddPosition(pos)
+		s.deadZones.SetBit(pos)
 	}
 	// at rirst find dead corners
 	for y, row := range s.Map.Tiles {
@@ -165,7 +164,7 @@ func (s *Solver) findDeadZones() {
 				if s.Map.AtPos(pos) == TileWall {
 					// log.Print("Wall hit - adding to deadzones!")
 					for _, p := range deadCorridor {
-						s.deadZones.AddPosition(p)
+						s.deadZones.SetBit(p)
 					}
 					break rayScan
 				}
@@ -177,7 +176,7 @@ func (s *Solver) findDeadZones() {
 }
 
 func (s *Solver) Solve(c context.Context) error {
-	if s.Done {
+	if s.solution != nil {
 		return nil
 	}
 	// prepare
@@ -190,13 +189,15 @@ func (s *Solver) Solve(c context.Context) error {
 	// initialize
 	log.Print("Initializing...")
 	boxPositions := s.Map.InitialBoxPositions()
+	domain, moves := NewMoveDomainFromMap(s.Map, boxPositions, s.Map.StartPos(), s.deadZones)
 	state := State{
-		MoveDomain:   NewMoveDomainFromMap(s.Map, boxPositions, s.Map.StartPos()),
+		MoveDomain:   domain,
 		BoxPositions: boxPositions,
 	}
 	root := NewNode(state)
 	root.ID = s.getID()
-	if !s.populateMoves(root) {
+
+	if !setMoves(root, moves) {
 		return fmt.Errorf("no moves available on init")
 	}
 	s.root = root
@@ -223,7 +224,6 @@ func (s *Solver) Solve(c context.Context) error {
 				if s.isSolution(n.State) {
 					log.Print("Solution found!")
 					s.solution = n
-					s.Done = true
 					return nil
 				}
 				nextFrontier = append(nextFrontier, n)
@@ -247,8 +247,7 @@ func (s *Solver) Solve(c context.Context) error {
 		step++
 	}
 
-	s.Done = true
-	return nil
+	return fmt.Errorf("all states explored but solution not found")
 }
 
 func (s *Solver) exploreNode(n *Node) []*Node {
@@ -264,8 +263,10 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 		boxDstPos := boxSrcPos.MoveInDirection(move.Direction)
 		nextPositions[move.BoxIndex] = boxDstPos
 
+		domain, moves := NewMoveDomainFromMap(s.Map, nextPositions, boxSrcPos, s.deadZones)
+
 		state := State{
-			MoveDomain:   NewMoveDomainFromMap(s.Map, nextPositions, boxSrcPos),
+			MoveDomain:   domain,
 			BoxPositions: nextPositions,
 		}
 
@@ -291,7 +292,7 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 			continue
 		}
 
-		s.populateMoves(node)
+		setMoves(node, moves)
 		n.Moves[move] = node
 
 		nextNodes = append(nextNodes, node)
@@ -300,47 +301,11 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 	return nextNodes
 }
 
-// populateMoves find available box movements from node state and adds them to moves map
-// return false if no moves available
-func (s Solver) populateMoves(n *Node) bool {
-	// log.Print("Populating moves...")
-	movesFound := false
-	// loop over all boxes on map
-	// TODO: consider optimization with contact positions storing
-	for i, boxPos := range n.State.BoxPositions {
-		// find valid moves
-		directions := []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft}
-	moves:
-		for _, dir := range directions {
-			// move is valid if its done from move domain and final tile is empty and not in forbidden zone
-			srcPos := boxPos.MoveAgainstDirection(dir)
-			if !n.State.MoveDomain.HasPosition(srcPos) {
-				continue
-			}
-			dstPos := boxPos.MoveInDirection(dir)
-			if s.Map.AtPos(dstPos) == TileWall {
-				continue
-			}
-			// check if any box occupies destination tile
-			for _, p := range n.State.BoxPositions {
-				if p == dstPos {
-					continue moves
-				}
-			}
-			// check destination isn't in dead zone
-			if s.deadZones.HasPosition(dstPos) {
-				continue
-			}
-
-			// finally add move
-			n.Moves[BoxMove{
-				BoxIndex:  i,
-				Direction: dir,
-			}] = nil
-			movesFound = true
-		}
+func setMoves(n *Node, moves []BoxMove) bool {
+	for _, m := range moves {
+		n.Moves[m] = nil
 	}
-	return movesFound
+	return len(moves) > 0
 }
 
 func (s Solver) isSolution(state State) bool {
@@ -356,7 +321,7 @@ func (s Solver) isSolution(state State) bool {
 }
 
 func (s Solver) GetPath() ([]MoveDirection, error) {
-	if !s.Done {
+	if s.solution == nil {
 		return nil, fmt.Errorf("call Solve() before GetPath()")
 	}
 	var path []MoveDirection
@@ -420,7 +385,7 @@ type SolverDebug struct {
 }
 
 func (s Solver) GetDebug() SolverDebug {
-	dz := s.deadZones.ListPosition()
+	dz := s.deadZones.List()
 	var metricsMap = make(map[Pos]map[string]int)
 
 	for y, row := range s.metricCalc.cells {

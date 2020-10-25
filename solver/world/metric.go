@@ -15,7 +15,7 @@ type MetricCalculator struct {
 	cells [][]cell
 }
 
-func NewMetricCalculator(m Map, deadzones MoveDomain) MetricCalculator {
+func NewMetricCalculator(m Map, deadzones Bitmap) MetricCalculator {
 	cells := make([][]cell, m.Height)
 	for y := 0; y < m.Height; y++ {
 		row := make([]cell, m.Width)
@@ -38,7 +38,7 @@ func NewMetricCalculator(m Map, deadzones MoveDomain) MetricCalculator {
 	return mc
 }
 
-func (mc *MetricCalculator) propagate(m Map, deadzones MoveDomain) {
+func (mc *MetricCalculator) propagate(m Map, deadzones Bitmap) {
 	log.Print("Running metric propagation...")
 	// run propagation until no new updates are made
 	for {
@@ -49,7 +49,7 @@ func (mc *MetricCalculator) propagate(m Map, deadzones MoveDomain) {
 				if m.AtPos(curPos) == TileWall {
 					continue
 				}
-				if deadzones.HasPosition(curPos) {
+				if deadzones.CheckBit(curPos) {
 					continue
 				}
 				for _, dir := range []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft} {

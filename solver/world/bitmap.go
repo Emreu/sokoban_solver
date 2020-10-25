@@ -1,6 +1,9 @@
 package world
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"strings"
+)
 
 const cellSize = 8
 
@@ -99,4 +102,14 @@ func (b Bitmap) HashBytes() []byte {
 		binary.BigEndian.PutUint64(bs[8*i:], c)
 	}
 	return bs
+}
+
+func (b Bitmap) String() string {
+	buf := &strings.Builder{}
+	buf.WriteString("Bitmap{")
+	for _, pos := range b.List() {
+		buf.WriteString(pos.String())
+	}
+	buf.WriteString("}")
+	return buf.String()
 }

@@ -4,6 +4,7 @@ import "encoding/json"
 
 type BoxMove struct {
 	BoxIndex  int
+	Distance  int
 	Direction MoveDirection
 }
 

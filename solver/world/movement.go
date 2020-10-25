@@ -30,6 +30,20 @@ func (d MoveDirection) String() string {
 	return "???"
 }
 
+func (d MoveDirection) Opposite() MoveDirection {
+	switch d {
+	case MoveUp:
+		return MoveDown
+	case MoveRight:
+		return MoveLeft
+	case MoveDown:
+		return MoveUp
+	case MoveLeft:
+		return MoveRight
+	}
+	return -1
+}
+
 func (d MoveDirection) MarshalJSON() ([]byte, error) {
 	switch d {
 	case MoveUp:
@@ -74,133 +88,97 @@ func NewMoveDomain() MoveDomain {
 
 // NewMoveDomainFromMap generate move domain from Map (considering only walls), box positions and starting position
 // TODO: refactor to create state with predefined moves
-func NewMoveDomainFromMap(m Map, boxPositions []Pos, start Pos) MoveDomain {
+func NewMoveDomainFromMap(m Map, boxPositions []Pos, start Pos, deadZones Bitmap) (MoveDomain, []BoxMove) {
 	var perimeter = make(map[Pos]struct{})
 	perimeter[start] = struct{}{}
 	domain := NewMoveDomain()
 	boxes := Bitmap{}
+	var moves []BoxMove
 
 	for _, pos := range boxPositions {
 		boxes.SetBit(pos)
 	}
 
-	var fill func(p Pos)
-	fill = func(p Pos) {
+	boxIndex := func(p Pos) int {
+		for i, pos := range boxPositions {
+			if p == pos {
+				return i
+			}
+		}
+		return -1
+	}
+
+	var fill func(p Pos, d MoveDirection, dist int)
+	fill = func(p Pos, d MoveDirection, dist int) {
 		if !m.IsInside(p) {
 			return
 		}
 		if m.AtPos(p) == TileWall {
 			return
 		}
+		// if we hit a box - check if move is possible and save
 		if boxes.CheckBit(p) {
+			dstPos := p.MoveInDirection(d)
+			// check if destination position is available
+			if m.AtPos(dstPos) == TileWall {
+				return
+			}
+			if boxes.CheckBit(dstPos) {
+				return
+			}
+			// check destination isn't in dead zone
+			if deadZones.CheckBit(dstPos) {
+				return
+			}
+
+			moves = append(moves, BoxMove{
+				Direction: d,
+				Distance:  dist,
+				BoxIndex:  boxIndex(p),
+			})
 			return
 		}
 		if domain.HasPosition(p) {
 			return
 		}
 		domain.AddPosition(p)
-		for _, n := range p.Neighbours() {
-			fill(n)
+		backward := d.Opposite()
+		for _, dir := range AllDirections {
+			if dir == backward {
+				continue
+			}
+			n := p.MoveInDirection(dir)
+			fill(n, dir, dist+1)
 		}
 	}
 
-	fill(start)
+	fill(start, -1, 0)
 
-	// var nextPerimeter = make(map[Pos]struct{})
-	// for {
-	// 	for pos := range perimeter {
-	// 		// skip if this tile is wall
-	// 		if m.AtPos(pos) == TileWall {
-	// 			continue
-	// 		}
-	// 		// skip if tile is occupied by box
-	// 		if _, occupied := boxPos[pos]; occupied {
-	// 			// but save contact position
-	// 			// domain.AddContacts(pos)
-	// 			continue
-	// 		}
-	// 		// add tile to domain
-	// 		domain.AddPosition(pos)
-	// 		// schedule neighbour tiles for next perimeter
-	// 		for _, p := range pos.Neighbours() {
-	// 			// skip if out of map
-	// 			if !m.IsInside(p) {
-	// 				continue
-	// 			}
-	// 			// skip if already processing
-	// 			if _, processing := perimeter[p]; processing {
-	// 				continue
-	// 			}
-	// 			// skip if already scheduled
-	// 			if _, scheduled := nextPerimeter[p]; scheduled {
-	// 				continue
-	// 			}
-	// 			// skip if already in domain
-	// 			if domain.HasPosition(p) {
-	// 				continue
-	// 			}
-	// 			// finally add to next perimeter
-	// 			nextPerimeter[p] = struct{}{}
-	// 		}
-	// 	}
-	// 	if len(nextPerimeter) == 0 {
-	// 		break
-	// 	}
-	// 	perimeter = nextPerimeter
-	// 	nextPerimeter = make(map[Pos]struct{})
-	// }
-
-	return domain
+	return domain, moves
 }
 
 func (md *MoveDomain) HasPosition(pos Pos) bool {
 	return md.bitmap.CheckBit(pos)
-	// _, exists := md.tiles[pos]
-	// return exists
 }
 
 func (md *MoveDomain) AddPosition(pos Pos) {
 	md.bitmap.SetBit(pos)
-	// md.tiles[pos] = struct{}{}
 }
 
 func (md *MoveDomain) ListPosition() []Pos {
 	return md.bitmap.List()
-	// var pos []Pos
-	// for p := range md.tiles {
-	// 	pos = append(pos, p)
-	// }
-	// return pos
 }
 
 func (md MoveDomain) HashBytes() []byte {
 	return md.bitmap.HashBytes()
-	// var res []byte
-	// for _, pos := range SortedPositions(md.ListPosition()) {
-	// 	res = append(res, byte(pos.X), byte(pos.Y))
-	// }
-	// return res
 }
 
 func (md MoveDomain) String() string {
 	buf := &strings.Builder{}
 	buf.WriteString("MoveDomain{")
-	// for pos := range md.tiles {
 	for _, pos := range md.bitmap.List() {
 		buf.WriteString(pos.String())
 	}
 	buf.WriteString("}")
 	return buf.String()
 }
-
-// func (md *MoveDomain) AddContacts(pos Pos) {
-// 	md.contacts[pos] = struct{}{}
-// }
-
-// func (md MoveDomain) ContactsList() []Pos {
-// 	var contacts []Pos
-// 	for p := range md.contacts {
-// 		contacts = append(contacts, p)
-// 	}
-// 	return contacts
-// }

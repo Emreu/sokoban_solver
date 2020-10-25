@@ -17,7 +17,7 @@ func TestMetricSimple(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Level reading error: %v", err)
 	}
-	mc := NewMetricCalculator(m, NewMoveDomain())
+	mc := NewMetricCalculator(m, Bitmap{})
 	goalPos := Pos{5, 1}
 	// sample dist at some points
 	for _, x := range []int{2, 3, 4, 5} {
@@ -57,7 +57,7 @@ func TestMetricEvaluation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Level reading error: %v", err)
 	}
-	mc := NewMetricCalculator(m, NewMoveDomain())
+	mc := NewMetricCalculator(m, Bitmap{})
 
 	state := State{
 		MoveDomain:   NewMoveDomain(),
