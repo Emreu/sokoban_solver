@@ -89,8 +89,6 @@ func NewMoveDomain() MoveDomain {
 // NewMoveDomainFromMap generate move domain from Map (considering only walls), box positions and starting position
 // TODO: refactor to create state with predefined moves
 func NewMoveDomainFromMap(m Map, boxPositions []Pos, start Pos, deadZones Bitmap) (MoveDomain, []BoxMove) {
-	var perimeter = make(map[Pos]struct{})
-	perimeter[start] = struct{}{}
 	domain := NewMoveDomain()
 	boxes := Bitmap{}
 	var moves []BoxMove
