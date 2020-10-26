@@ -21,24 +21,22 @@ func TestMetricSimple(t *testing.T) {
 	goalPos := Pos{5, 1}
 	// sample dist at some points
 	for _, x := range []int{2, 3, 4, 5} {
-		d := mc.cells[1][x].dist
-		if len(d) != 1 {
-			t.Fatalf("Wrong number of metrics targets @(%d, 1): %v", x, d)
+		metrics := mc.field[1][x]
+		if len(metrics) != 1 {
+			t.Fatalf("Wrong number of metrics targets @(%d, 1): %v", x, metrics)
 		}
 
-		dist, ok := d[goalPos]
-		if !ok {
-			t.Errorf("Metric to goal @%s not found @(%d,1)", goalPos, x)
-			continue
-		}
 		expected := 5 - x
-		if dist != expected {
-			t.Errorf("Wrong metric value to goal @%s at @(%d,1): expected %d, found %d", goalPos, x, expected, dist)
+		if metrics[0] != expected {
+			t.Errorf("Wrong metric value to goal @%s at @(%d,1): expected %d, found %d", goalPos, x, expected, metrics[0])
 		}
 	}
-	d := mc.cells[1][1].dist
-	if len(d) != 0 {
-		t.Fatalf("Wrong number of metrics targets @(1, 1): %v", d)
+	metrics := mc.field[1][1]
+	if len(metrics) != 1 {
+		t.Fatalf("Wrong number of metrics targets @(1, 1): %v", metrics)
+	}
+	if metrics[0] != -1 {
+		t.Fatalf("Wrong value of metrics targets @(1, 1): %v", metrics[0])
 	}
 }
 

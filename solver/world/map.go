@@ -135,6 +135,19 @@ func (m Map) InitialBoxPositions() []Pos {
 	return pos
 }
 
+func (m Map) GoalsPositions() []Pos {
+	var pos []Pos
+	for y, row := range m.Tiles {
+		for x, tile := range row {
+			switch tile {
+			case TileGoal, TileBoxOnGoal, TilePlayerOnGoal:
+				pos = append(pos, Pos{x, y})
+			}
+		}
+	}
+	return pos
+}
+
 func (m Map) At(x, y int) Tile {
 	if x < 0 || x >= m.Width || y < 0 || y >= m.Height {
 		return TileEmpty

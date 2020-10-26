@@ -386,29 +386,29 @@ type SolverDebug struct {
 
 func (s Solver) GetDebug() SolverDebug {
 	dz := s.deadZones.List()
-	var metricsMap = make(map[Pos]map[string]int)
+	// var metricsMap = make(map[Pos]map[string]int)
 
-	for y, row := range s.metricCalc.cells {
-		for x, cell := range row {
-			for goalPos, value := range cell.dist {
-				field, ok := metricsMap[goalPos]
-				if !ok {
-					field = make(map[string]int)
-				}
-				field[fmt.Sprintf("%d,%d", x, y)] = value
-				metricsMap[goalPos] = field
-			}
-		}
-	}
+	// for y, row := range s.metricCalc.field {
+	// 	for x, metrics := range row {
+	// 		for goalPos, value := range cell.dist {
+	// 			field, ok := metricsMap[goalPos]
+	// 			if !ok {
+	// 				field = make(map[string]int)
+	// 			}
+	// 			field[fmt.Sprintf("%d,%d", x, y)] = value
+	// 			metricsMap[goalPos] = field
+	// 		}
+	// 	}
+	// }
 
-	var metricList []map[string]int
-	for _, field := range metricsMap {
-		metricList = append(metricList, field)
-	}
+	// var metricList []map[string]int
+	// for _, field := range metricsMap {
+	// 	metricList = append(metricList, field)
+	// }
 
 	return SolverDebug{
 		DeadZones: dz,
-		Metrics:   metricList,
+		// Metrics:   metricList,
 	}
 }
 
