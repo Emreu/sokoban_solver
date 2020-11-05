@@ -15,11 +15,11 @@ func comparePaths(p1, p2 []MoveDirection) bool {
 }
 
 func TestPathfindingSimple(t *testing.T) {
-	md := NewMoveDomain()
+	md := Bitmap{}
 
-	md.AddPosition(Pos{0, 0})
-	md.AddPosition(Pos{1, 0})
-	md.AddPosition(Pos{2, 0})
+	md.SetBit(Pos{0, 0})
+	md.SetBit(Pos{1, 0})
+	md.SetBit(Pos{2, 0})
 
 	path, err := FindDirections(md, Pos{0, 0}, Pos{2, 0})
 	if err != nil {
@@ -41,9 +41,9 @@ func TestPathfindingSimple(t *testing.T) {
 		t.Errorf("Wrong directions, expected: %v got: %v", expectedPath, path)
 	}
 
-	md.AddPosition(Pos{2, 1})
-	md.AddPosition(Pos{2, 2})
-	md.AddPosition(Pos{1, 2})
+	md.SetBit(Pos{2, 1})
+	md.SetBit(Pos{2, 2})
+	md.SetBit(Pos{1, 2})
 
 	path, err = FindDirections(md, Pos{0, 0}, Pos{1, 2})
 	if err != nil {

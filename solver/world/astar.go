@@ -20,7 +20,7 @@ func manhattan(from, to Pos) int {
 	return dist
 }
 
-func FindDirections(domain MoveDomain, from, to Pos) ([]MoveDirection, error) {
+func FindDirections(domain Bitmap, from, to Pos) ([]MoveDirection, error) {
 	if from == to {
 		return []MoveDirection{}, nil
 	}
@@ -91,7 +91,7 @@ func FindDirections(domain MoveDomain, from, to Pos) ([]MoveDirection, error) {
 		for _, dir := range AllDirections {
 			// check if we stay inside movement domain
 			neighbour := current.MoveInDirection(dir)
-			if !domain.HasPosition(neighbour) {
+			if !domain.CheckBit(neighbour) {
 				continue
 			}
 			// check if better path exists

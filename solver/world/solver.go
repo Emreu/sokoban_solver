@@ -9,20 +9,25 @@ import (
 const ExploreBatch = 200
 
 type Solver struct {
-	Map
+	m             Map
 	deadZones     Bitmap
+	hLock         Bitmap
+	vLock         Bitmap
 	root          *Node
 	solution      *Node
 	nodeHashIndex map[uint64]struct{}
+	boxHashIndex  map[uint64][]*Node
 	metricCalc    MetricCalculator
 	nextID        int64
+	frontier      Frontier
 }
 
 func NewSolver(m Map) *Solver {
 	return &Solver{
-		Map:           m,
+		m:             m,
 		deadZones:     Bitmap{},
 		nodeHashIndex: make(map[uint64]struct{}),
+		boxHashIndex:  make(map[uint64][]*Node),
 	}
 }
 
@@ -52,199 +57,33 @@ func (s *Solver) getID() int64 {
 	return s.nextID
 }
 
-// Find dead zones - positions from where it is impossible to move box to goal
-func (s *Solver) findDeadZones() {
-	var deadCorners []Pos
-	addDeadZone := func(x, y int) {
-		pos := Pos{x, y}
-		if !s.Map.IsInside(pos) {
-			return
-		}
-		switch s.Map.AtPos(pos) {
-		case TileWall, TileGoal, TilePlayerOnGoal, TileBoxOnGoal:
-			// do nothing
-			return
-		}
-		// don't add if already added
-		if s.deadZones.CheckBit(pos) {
-			return
-		}
-		deadCorners = append(deadCorners, pos)
-		s.deadZones.SetBit(pos)
-	}
-	// at rirst find dead corners
-	for y, row := range s.Map.Tiles {
-		for x, tile := range row {
-			if tile == TileWall {
-				var up, down, left, right bool
-				// check diagonal positions
-				if s.Map.At(x-1, y-1) == TileWall {
-					up = true
-					left = true
-				}
-				if s.Map.At(x+1, y-1) == TileWall {
-					up = true
-					right = true
-				}
-				if s.Map.At(x+1, y+1) == TileWall {
-					right = true
-					down = true
-				}
-				if s.Map.At(x-1, y+1) == TileWall {
-					left = true
-					down = true
-				}
-				// add corresponding postition to dead zones if there is no wall or goal
-				if up {
-					addDeadZone(x, y-1)
-				}
-				if right {
-					addDeadZone(x+1, y)
-				}
-				if down {
-					addDeadZone(x, y+1)
-				}
-				if left {
-					addDeadZone(x-1, y)
-				}
-			}
-		}
-	}
-
-	log.Printf("Deadzones (corners only): %s", s.deadZones)
-
-	// propagate dead corners
-	for _, startPos := range deadCorners {
-		for _, dir := range []MoveDirection{MoveUp, MoveRight, MoveDown, MoveLeft} {
-			// log.Printf("Propagating from %s to %s", startPos, dir)
-			pos := startPos.MoveInDirection(dir)
-			if s.Map.AtPos(pos) == TileWall {
-				// log.Print("Stop: wall at first tile")
-				continue
-			}
-			var leftOpen, rightOpen bool
-			var deadCorridor []Pos
-			// advance position & check left & right walls
-		rayScan:
-			for {
-				// if out of map - stop
-				if !s.Map.IsInside(pos) {
-					// log.Print("Stop: out of map")
-					break rayScan
-				}
-				// if goal on path - it not dead zone
-				switch s.Map.AtPos(pos) {
-				case TileGoal, TileBoxOnGoal, TilePlayerOnGoal:
-					// log.Print("Stop: goal on line")
-					break rayScan
-				}
-				// check left if it's not open yet
-				if !leftOpen {
-					leftPos := pos.MoveInDirection(dir.RotateCCW())
-					if s.Map.AtPos(leftPos) != TileWall {
-						leftOpen = true
-					}
-				}
-				// check right if it's not open yet
-				if !rightOpen {
-					rightPos := pos.MoveInDirection(dir.RotateCW())
-					if s.Map.AtPos(rightPos) != TileWall {
-						rightOpen = true
-					}
-				}
-				// if both open - stop propagation
-				if leftOpen && rightOpen {
-					// log.Print("Stop: both sides clear")
-					break rayScan
-				}
-				// move ahead
-				deadCorridor = append(deadCorridor, pos)
-				pos = pos.MoveInDirection(dir)
-				// if wall hit - stop propagation and add corridor to dead zone
-				if s.Map.AtPos(pos) == TileWall {
-					// log.Print("Wall hit - adding to deadzones!")
-					for _, p := range deadCorridor {
-						s.deadZones.SetBit(p)
-					}
-					break rayScan
-				}
-			}
-		}
-	}
-
-	log.Printf("Deadzones (with propagation): %s", s.deadZones)
-}
-
 func (s *Solver) Solve(c context.Context) error {
 	if s.solution != nil {
 		return nil
 	}
 	// prepare
 	log.Print("Finding dead zones...")
-	s.findDeadZones()
+	s.deadZones = FindDeadZones(s.m)
+
+	log.Print("Finding h/v lock zones...")
+	s.hLock, s.vLock = FindMoveLocks(s.m)
 
 	log.Print("Preparing metric calc...")
-	s.metricCalc = NewMetricCalculator(s.Map, s.deadZones)
+	s.metricCalc = NewMetricCalculator(s.m, s.deadZones)
 
 	// initialize
-	log.Print("Initializing...")
-	boxPositions := s.Map.InitialBoxPositions()
-	domain, moves := NewMoveDomainFromMap(s.Map, boxPositions, s.Map.StartPos(), s.deadZones)
-	state := State{
-		MoveDomain:   domain,
-		BoxPositions: boxPositions,
-	}
-	root := NewNode(state)
-	root.ID = s.getID()
+	log.Print("Starting solution search...")
+	s.root = s.createNode(s.m.InitialBoxPositions(), s.m.StartPos(), nil)
+	// TODO: check
 
-	if !setMoves(root, moves) {
-		return fmt.Errorf("no moves available on init")
-	}
-	s.root = root
+	s.frontier.Add(s.root)
 
-	if s.isSolution(state) {
-		return nil
-	}
-
-	// do breadth first search
-	var exploreFrontier = []*Node{root}
-	var postponedFrontier = []*Node{}
-
-	step := 0
-	for len(exploreFrontier) != 0 {
-		if err := c.Err(); err != nil {
-			return fmt.Errorf("timed out or canceled")
-		}
-		var nextFrontier []*Node
-		log.Printf("Exploring frontier #%d of %d nodes (%d postponed)...", step, len(exploreFrontier), len(postponedFrontier))
-		for _, node := range exploreFrontier {
-			newNodes := s.exploreNode(node)
-			for _, n := range newNodes {
-				// check if solution was found
-				if s.isSolution(n.State) {
-					log.Print("Solution found!")
-					s.solution = n
-					return nil
-				}
-				nextFrontier = append(nextFrontier, n)
-			}
+	for {
+		node, err := s.frontier.Pick()
+		if err != nil {
+			return fmt.Errorf("error picking next node: %v", err)
 		}
 
-		// make next frontier
-		fullFrontier := mergeSorted(postponedFrontier, nextFrontier)
-		if len(fullFrontier) > ExploreBatch {
-			exploreFrontier = fullFrontier[:ExploreBatch]
-			postponedFrontier = fullFrontier[ExploreBatch:]
-		} else {
-			exploreFrontier = fullFrontier
-			postponedFrontier = []*Node{}
-		}
-
-		if len(exploreFrontier) > 0 {
-			log.Printf("Best metric: %d", exploreFrontier[0].Metric)
-		}
-
-		step++
 	}
 
 	return fmt.Errorf("all states explored but solution not found")
@@ -256,14 +95,14 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 	for move := range n.Moves {
 		// log.Printf("+ move #%d %s", move.BoxIndex, move.Direction)
 		// copy box positions from current state
-		var nextPositions = make([]Pos, len(n.State.BoxPositions))
-		copy(nextPositions, n.State.BoxPositions)
+		var nextPositions = make([]Pos, len(n.Boxes))
+		copy(nextPositions, n.Boxes)
 		// apply move to current box positions
 		boxSrcPos := nextPositions[move.BoxIndex]
 		boxDstPos := boxSrcPos.MoveInDirection(move.Direction)
 		nextPositions[move.BoxIndex] = boxDstPos
 
-		domain, moves := NewMoveDomainFromMap(s.Map, nextPositions, boxSrcPos, s.deadZones)
+		domain, moves := NewMoveDomainFromMap(s.m, nextPositions, boxSrcPos, s.deadZones)
 
 		state := State{
 			MoveDomain:   domain,
@@ -285,7 +124,7 @@ func (s *Solver) exploreNode(n *Node) []*Node {
 
 		// calculate metric
 		var err error
-		node.Metric, err = s.metricCalc.Evaluate(state)
+		node.Metric, err = s.metricCalc.Evaluate(state.BoxPositions)
 		if err != nil {
 			node.Fail = NodeInvalid
 			n.Moves[move] = node
@@ -308,9 +147,9 @@ func setMoves(n *Node, moves []BoxMove) bool {
 	return len(moves) > 0
 }
 
-func (s Solver) isSolution(state State) bool {
-	for _, pos := range state.BoxPositions {
-		switch s.Map.AtPos(pos) {
+func (s Solver) isSolution(boxes PosList) bool {
+	for _, pos := range boxes {
+		switch s.m.AtPos(pos) {
 		case TileBoxOnGoal, TilePlayerOnGoal, TileGoal:
 			continue
 		default:
@@ -346,7 +185,7 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 		// log.Printf("Move #%d %s", move.BoxIndex, move.Direction)
 
 		// start from where box was before move apply
-		start := previous.BoxPositions[move.BoxIndex]
+		start := previous.Boxes[move.BoxIndex]
 		if !lastState {
 			// do transition to next destination if it's not last state
 			var err error
@@ -371,7 +210,7 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 		previous = current.Parent
 	}
 	// finally find directions from start position to first box move
-	segment, err := FindDirections(current.MoveDomain, s.Map.StartPos(), dest)
+	segment, err := FindDirections(current.MoveDomain, s.m.StartPos(), dest)
 	if err != nil {
 		return nil, fmt.Errorf("path finding error: %v", err)
 	}
@@ -432,4 +271,139 @@ func (s Solver) GetTree(max int) []*Node {
 	}
 
 	return output
+}
+
+func (s *Solver) createNode(boxes PosList, start Pos, parent *Node) *Node {
+	// check if state was already tracked
+	hash := boxes.Hash()
+	if nodes, exists := s.boxHashIndex[hash]; exists {
+		// check all nodes with same box positions
+		for _, n := range nodes {
+			// if start is in move domain - state is the same
+			if n.MoveDomain.CheckBit(start) {
+				// TODO: return error for duplicate state
+				return nil
+			}
+		}
+		// TODO: save node by hash
+	}
+	// create node
+	node := &Node{
+		ID:     s.getID(),
+		Parent: parent,
+	}
+	// TODO: save state to hash index
+	// check if state is solution, but only if parent is none (initial state) or parent metric = 1 (one step to solution)
+	if parent == nil || parent.Metric == 1 {
+		if s.isSolution(boxes) {
+			// TODO: return error for solution
+			return nil
+		}
+	}
+	// TODO: check if deadlock detection is required
+
+	// build move domain and box moves
+	domain, moves := BuildState(s.m, boxes, start, s.deadZones, s.hLock, s.vLock)
+	node.MoveDomain = domain
+	for _, move := range moves {
+		node.Moves[move] = nil
+	}
+
+	// evaluate metric
+	metric, err := s.metricCalc.Evaluate(boxes)
+	if err != nil {
+		// TODO: return invalid state error
+		return nil
+	}
+	node.Metric = metric
+
+	return node
+}
+
+func BuildState(m Map, boxes PosList, start Pos, deadZones, hLock, vLock Bitmap) (Bitmap, []BoxMove) {
+	var domain Bitmap
+	var boxBitmap Bitmap
+	var moves []BoxMove
+
+	for _, pos := range boxes {
+		boxBitmap.SetBit(pos)
+	}
+
+	boxIndex := func(p Pos) int {
+		for i, pos := range boxes {
+			if p == pos {
+				return i
+			}
+		}
+		return -1
+	}
+
+	var fill func(p Pos, d MoveDirection, dist int)
+	fill = func(p Pos, d MoveDirection, dist int) {
+		if !m.IsInside(p) {
+			return
+		}
+		if m.AtPos(p) == TileWall {
+			return
+		}
+		backward := d.Opposite()
+		// if we hit a box - check if move is possible and save
+		if boxBitmap.CheckBit(p) {
+			dstPos := p.MoveInDirection(d)
+			// check if destination position is available
+			if m.AtPos(dstPos) == TileWall {
+				return
+			}
+			if boxBitmap.CheckBit(dstPos) {
+				return
+			}
+			// check destination isn't in dead zone
+			if deadZones.CheckBit(dstPos) {
+				return
+			}
+			// for quick deadlock detection check if there is neighbour box with same h/v lock as target position
+			dstHLock := hLock.CheckBit(dstPos)
+			dstVLock := vLock.CheckBit(dstPos)
+			if dstHLock || dstVLock {
+				for _, dir := range AllDirections {
+					if dir == backward {
+						continue
+					}
+					n := p.MoveInDirection(dir)
+					if !boxBitmap.CheckBit(n) {
+						continue
+					}
+					if dstHLock && hLock.CheckBit(n) {
+						return
+					}
+					if dstVLock && vLock.CheckBit(n) {
+						return
+					}
+				}
+			}
+			// save move
+			move := BoxMove{
+				Direction: d,
+				Distance:  dist,
+				BoxIndex:  boxIndex(p),
+			}
+			moves = append(moves, move)
+			return
+		}
+		if domain.CheckBit(p) {
+			return
+		}
+		domain.SetBit(p)
+		for _, dir := range AllDirections {
+			if dir == backward {
+				continue
+			}
+			n := p.MoveInDirection(dir)
+			fill(n, dir, dist+1)
+		}
+	}
+
+	fill(start, -1, 0)
+
+	return domain, moves
 }

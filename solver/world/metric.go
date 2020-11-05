@@ -128,12 +128,12 @@ type boxGoal struct {
 	minIndex int
 }
 
-func (mc MetricCalculator) Evaluate(s State) (int, error) {
+func (mc MetricCalculator) Evaluate(boxes PosList) (int, error) {
 	var sortList []boxGoal
 	var total = 0
 	boundGoals := make([]bool, mc.goalsCount)
 
-	for _, pos := range s.BoxPositions {
+	for _, pos := range boxes {
 		metrics := mc.field[pos.Y][pos.X]
 		min := mc.min[pos.Y][pos.X]
 		minIndex := mc.minIndex[pos.Y][pos.X]
@@ -192,7 +192,7 @@ func (mc MetricCalculator) Evaluate(s State) (int, error) {
 		// remove first box and add up metric and disable goal
 		best := sortList[0]
 		total += best.min
-		sortList = sortList[1:len(sortList)]
+		sortList = sortList[1:]
 		boundGoals[best.minIndex] = true
 	}
 

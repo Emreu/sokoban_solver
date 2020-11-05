@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"hash/fnv"
 	"sort"
 )
 
@@ -65,6 +66,33 @@ func (p Pos) Mirror(center Pos) Pos {
 		X: 2*center.X - p.X,
 		Y: 2*center.Y - p.Y,
 	}
+}
+
+type PosList []Pos
+
+func (p PosList) Hash() uint64 {
+	hash := fnv.New64()
+
+	for _, pos := range p.Sorted() {
+		hash.Write([]byte{byte(pos.X)})
+		hash.Write([]byte{byte(pos.Y)})
+	}
+
+	return hash.Sum64()
+}
+
+func (p PosList) Sorted() PosList {
+	sort.Slice(p, func(i, j int) bool {
+		if p[i].Y < p[j].Y {
+			return true
+		} else if p[i].Y > p[j].Y {
+			return false
+		} else if p[i].X < p[j].X {
+			return true
+		}
+		return false
+	})
+	return p
 }
 
 func SortedPositions(pos []Pos) []Pos {

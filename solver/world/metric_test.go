@@ -62,7 +62,7 @@ func TestMetricEvaluation(t *testing.T) {
 		BoxPositions: m.InitialBoxPositions(),
 	}
 
-	metric, err := mc.Evaluate(state)
+	metric, err := mc.Evaluate(state.BoxPositions)
 	if err != nil {
 		t.Fatal("Valid state has been evaluated as failed")
 	}
@@ -77,7 +77,7 @@ func TestMetricEvaluation(t *testing.T) {
 		{2, 3},
 	}
 
-	metric, err = mc.Evaluate(state)
+	metric, err = mc.Evaluate(state.BoxPositions)
 	if err != nil {
 		t.Fatal("Valid state has been evaluated as failed")
 	}
@@ -92,7 +92,7 @@ func TestMetricEvaluation(t *testing.T) {
 		{3, 2},
 	}
 
-	metric, err = mc.Evaluate(state)
+	metric, err = mc.Evaluate(state.BoxPositions)
 	if err == nil {
 		t.Fatalf("Failed state has been evaluated as valid")
 	}

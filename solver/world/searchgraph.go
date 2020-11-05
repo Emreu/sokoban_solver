@@ -17,11 +17,12 @@ const (
 )
 
 type Node struct {
-	ID     int64
-	Metric int
-	Hash   uint64
-	Fail   NodeFail
-	State
+	ID         int64
+	Metric     int
+	Hash       uint64
+	Fail       NodeFail
+	MoveDomain Bitmap
+	Boxes      PosList
 	// Parent node for easy backward traverse
 	Parent *Node
 	// Moves represent possible moves from current state with pointer to corresponding states
@@ -32,9 +33,14 @@ func NewNode(s State) *Node {
 	return &Node{
 		Metric: -1,
 		Hash:   s.Hash(),
-		State:  s,
-		Moves:  make(map[BoxMove]*Node),
+		// State:  s,
+		Moves: make(map[BoxMove]*Node),
 	}
+}
+
+func (n *Node) ApplyMove(move BoxMove) PosList {
+	// n.BoxPositions[move.BoxIndex]
+	return nil
 }
 
 func (n Node) MarshalJSON() ([]byte, error) {
@@ -53,8 +59,8 @@ func (n Node) MarshalJSON() ([]byte, error) {
 	}
 	N.Metric = n.Metric
 	N.Hash = n.Hash
-	N.Boxes = n.State.BoxPositions
-	N.Domain = n.State.MoveDomain.ListPosition()
+	N.Boxes = n.Boxes
+	N.Domain = n.MoveDomain.List()
 	switch n.Fail {
 	case NodeDuplicate:
 		N.Fail = "duplicate"
