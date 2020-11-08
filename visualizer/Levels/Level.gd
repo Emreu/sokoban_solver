@@ -5,6 +5,8 @@ var goal = preload("res://Objects/Goal.tscn")
 var wall = preload("res://Objects/Wall.tscn")
 
 var zone = preload("res://Objects/Deadzone.tscn")
+var hlock = preload("res://Objects/HLock.tscn")
+var vlock = preload("res://Objects/VLock.tscn")
 
 const tileSize = Vector2(64, 64)
 
@@ -35,6 +37,8 @@ func Load(level):
 		g.queue_free()
 	for z in $Deadzones.get_children():
 		z.queue_free()
+	for l in $Locks.get_children():
+		l.queue_free()
 	for m in $Metrics.get_children():
 		m.queue_free()
 	
@@ -89,6 +93,18 @@ func ShowDeadzones(positions):
 		var z = zone.instance()
 		z.position = tileSize * pos
 		$Deadzones.add_child(z, true)
+		
+func ShowLocks(hpos, vpos):
+	for l in $Locks.get_children():
+		l.queue_free()
+	for pos in hpos:
+		var l = hlock.instance()
+		l.position = tileSize * pos
+		$Locks.add_child(l, true)
+	for pos in vpos:
+		var l = vlock.instance()
+		l.position = tileSize * pos
+		$Locks.add_child(l, true)
 	
 func checkWin():
 	var boxPositions = []

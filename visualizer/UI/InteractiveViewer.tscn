@@ -58,17 +58,27 @@ text = "Tree"
 "default_disabled",
 ]]
 margin_left = 207.0
-margin_right = 337.0
+margin_right = 294.0
 margin_bottom = 20.0
 disabled = true
 toggle_mode = true
-text = "Toggle dead zones"
+text = "Dead zones"
+
+[node name="HVLocks" type="Button" parent="VBoxContainer/ButtonsBar" groups=[
+"default_disabled",
+]]
+margin_left = 298.0
+margin_right = 370.0
+margin_bottom = 20.0
+disabled = true
+toggle_mode = true
+text = "H/V locks"
 
 [node name="NoMetrics" type="Button" parent="VBoxContainer/ButtonsBar" groups=[
 "default_disabled",
 ]]
-margin_left = 341.0
-margin_right = 436.0
+margin_left = 374.0
+margin_right = 469.0
 margin_bottom = 20.0
 disabled = true
 text = "Hide metrics"
@@ -186,13 +196,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Deadzones" type="CheckBox" parent="SettingsWindow"]
+[node name="Mapdebug" type="CheckBox" parent="SettingsWindow"]
 margin_left = 16.0
 margin_top = 48.0
 margin_right = 115.0
 margin_bottom = 72.0
 pressed = true
-text = "Deadzones"
+text = "Map debug zones"
 
 [node name="Metrics" type="CheckBox" parent="SettingsWindow"]
 margin_left = 16.0
@@ -270,6 +280,7 @@ __meta__ = {
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Solve" to="." method="_on_Solve_pressed"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/Tree" to="." method="_on_Tree_pressed"]
 [connection signal="toggled" from="VBoxContainer/ButtonsBar/DeadZones" to="." method="_on_DeadZones_toggled"]
+[connection signal="toggled" from="VBoxContainer/ButtonsBar/HVLocks" to="." method="_on_HVLocks_toggled"]
 [connection signal="pressed" from="VBoxContainer/ButtonsBar/NoMetrics" to="." method="_on_NoMetrics_pressed"]
 [connection signal="item_selected" from="VBoxContainer/HBoxContainer/RightPanel/Moves" to="." method="GotoState"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/RightPanel/Reset" to="." method="_on_Reset_pressed"]

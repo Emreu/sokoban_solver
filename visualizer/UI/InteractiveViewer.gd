@@ -8,6 +8,8 @@ var level = null
 
 var debug_deadzones = []
 var debug_metrics = []
+var debug_hlock = []
+var debug_vlock = []
 
 signal exit
 
@@ -19,6 +21,8 @@ func Init(newLevel):
 	
 	debug_deadzones = []
 	debug_metrics = []
+	debug_hlock = []
+	debug_vlock = []
 	
 	Level.Load(newLevel)
 	# wait for 1 frame so old object will be deleted from level
@@ -160,6 +164,16 @@ func _on_HTTPRequest_request_completed(result, response_code, headers, body):
 		for pos in res.result["dead_zones"]:
 			debug_deadzones.append(Vector2(pos["X"], pos["Y"]))
 		$VBoxContainer/ButtonsBar/DeadZones.disabled = false
+	if res.result.has("horizontal_locks"):
+		debug_hlock.clear()
+		for pos in res.result["horizontal_locks"]:
+			debug_hlock.append(Vector2(pos["X"], pos["Y"]))
+		$VBoxContainer/ButtonsBar/HVLocks.disabled = false
+	if res.result.has("vertical_locks"):
+		debug_vlock.clear()
+		for pos in res.result["vertical_locks"]:
+			debug_vlock.append(Vector2(pos["X"], pos["Y"]))
+		$VBoxContainer/ButtonsBar/HVLocks.disabled = false
 	if res.result.has("metrics"):
 		var n = 0
 		debug_metrics.clear()
@@ -194,3 +208,10 @@ func _on_HTTPRequest_request_completed(result, response_code, headers, body):
 					DoMove(Common.Direction.LEFT)
 			yield(get_tree(),"idle_frame")
 			yield(get_tree(),"physics_frame")
+
+
+func _on_HVLocks_toggled(button_pressed):
+	if button_pressed:
+		Level.ShowLocks(debug_hlock, debug_vlock)
+	else:
+		Level.ShowLocks([], [])

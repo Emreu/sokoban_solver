@@ -24,8 +24,8 @@ func _on_Button_pressed():
 
 func GetURL():
 	var params = "?"
-	if $Deadzones.pressed:
-		params += "deadzones=true&"
+	if $Mapdebug.pressed:
+		params += "mapdebug=true&"
 	if $Metrics.pressed:
 		params += "metrics=true&"
 	if $States.pressed:
