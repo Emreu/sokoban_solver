@@ -13,11 +13,13 @@ import (
 )
 
 type solveResponse struct {
-	Solution  []world.MoveDirection `json:"solution,omitempty"`
-	DeadZones []world.Pos           `json:"dead_zones,omitempty"`
-	Metrics   []map[string]int      `json:"metrics,omitempty"`
-	States    []*world.Node         `json:"states,omitempty"`
-	Error     string                `json:"error,omitempty"`
+	Solution       []world.MoveDirection `json:"solution,omitempty"`
+	DeadZones      world.PosList         `json:"dead_zones,omitempty"`
+	HorizontalLock world.PosList         `json:"horizontal_locks,omitempty"`
+	VerticalLock   world.PosList         `json:"vertical_locks,omitempty"`
+	Metrics        []map[string]int      `json:"metrics,omitempty"`
+	States         []*world.Node         `json:"states,omitempty"`
+	Error          string                `json:"error,omitempty"`
 }
 
 func errorMessage(res http.ResponseWriter, status int, err error) {
@@ -74,8 +76,10 @@ func solveHandler(res http.ResponseWriter, req *http.Request) {
 	defer func() {
 		debug := solver.GetDebug()
 		// add additional data
-		if query.Get("deadzones") == "true" {
+		if query.Get("mapdebug") == "true" {
 			result.DeadZones = debug.DeadZones
+			result.HorizontalLock = debug.HLock
+			result.VerticalLock = debug.VLock
 		}
 		if query.Get("metrics") == "true" {
 			result.Metrics = debug.Metrics

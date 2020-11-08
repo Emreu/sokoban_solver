@@ -86,11 +86,9 @@ func (mc *MetricCalculator) propagate(m Map, deadzones Bitmap) {
 			}
 		}
 		if noUpdates {
-			break
+			return
 		}
 	}
-
-	// log.Print(mc.String())
 }
 
 func (mc *MetricCalculator) initMin() {

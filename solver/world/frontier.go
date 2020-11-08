@@ -1,13 +1,60 @@
 package world
 
-type Frontier struct{}
+import (
+	"log"
+	"sort"
+)
 
-func (f *Frontier) Add(n *Node) {
+const batchSize = 10
 
+type Frontier struct {
+	nodes []*Node
 }
 
-func (f *Frontier) Pick() (*Node, error) {
-	return nil, nil
+func (f *Frontier) Add(n *Node) {
+	f.nodes = append(f.nodes, n)
+}
+
+func (f Frontier) HasNodes() bool {
+	return len(f.nodes) > 0
+}
+
+func (f *Frontier) GetBatch() []*Node {
+	// sort
+	sort.Slice(f.nodes, func(i, j int) bool {
+		return f.nodes[i].Metric < f.nodes[j].Metric
+	})
+	index := batchSize
+	if index > len(f.nodes) {
+		index = len(f.nodes)
+	}
+	top := f.nodes[:index]
+	remaining := f.nodes[index:]
+	log.Printf("Fetching from frontier %d nodes (%d remaining), best metric: %d, worst: %d", len(top), len(remaining), top[0].Metric, top[len(top)-1].Metric)
+
+	f.nodes = remaining
+	return top
+}
+
+func mergeSorted(base, addition []*Node) []*Node {
+	var result = make([]*Node, len(base)+len(addition))
+	var i, j, k = 0, 0, 0
+	for i < len(base) && j < len(addition) {
+		if base[i].Metric < addition[j].Metric {
+			result[k] = base[i]
+			i++
+		} else {
+			result[k] = addition[j]
+			j++
+		}
+		k++
+	}
+	if i < len(base) {
+		copy(result[k:], base[i:])
+	} else {
+		copy(result[k:], addition[j:])
+	}
+	return result
 }
 
 /*

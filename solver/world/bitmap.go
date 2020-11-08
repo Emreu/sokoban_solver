@@ -69,7 +69,7 @@ func (b *Bitmap) SetBit(p Pos) {
 }
 
 func (b Bitmap) List() []Pos {
-	var pos []Pos
+	var pos = make([]Pos, 0)
 	for i, cell := range b.cells {
 		if cell == 0 {
 			continue

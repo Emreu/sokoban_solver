@@ -57,12 +57,9 @@ func TestMetricEvaluation(t *testing.T) {
 	}
 	mc := NewMetricCalculator(m, Bitmap{})
 
-	state := State{
-		MoveDomain:   NewMoveDomain(),
-		BoxPositions: m.InitialBoxPositions(),
-	}
+	boxPositions := m.InitialBoxPositions()
 
-	metric, err := mc.Evaluate(state.BoxPositions)
+	metric, err := mc.Evaluate(boxPositions)
 	if err != nil {
 		t.Fatal("Valid state has been evaluated as failed")
 	}
@@ -71,13 +68,13 @@ func TestMetricEvaluation(t *testing.T) {
 		t.Fatalf("Wrong metric value (initial state) expected: %d got: %d", expected, metric)
 	}
 
-	state.BoxPositions = []Pos{
+	boxPositions = []Pos{
 		{3, 1},
 		{3, 2},
 		{2, 3},
 	}
 
-	metric, err = mc.Evaluate(state.BoxPositions)
+	metric, err = mc.Evaluate(boxPositions)
 	if err != nil {
 		t.Fatal("Valid state has been evaluated as failed")
 	}
@@ -86,13 +83,13 @@ func TestMetricEvaluation(t *testing.T) {
 		t.Fatalf("Wrong metric value expected: %d got: %d", expected, metric)
 	}
 
-	state.BoxPositions = []Pos{
+	boxPositions = []Pos{
 		{2, 1},
 		{3, 1},
 		{3, 2},
 	}
 
-	metric, err = mc.Evaluate(state.BoxPositions)
+	metric, err = mc.Evaluate(boxPositions)
 	if err == nil {
 		t.Fatalf("Failed state has been evaluated as valid")
 	}

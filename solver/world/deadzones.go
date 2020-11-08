@@ -11,7 +11,7 @@ func FindDeadZones(m Map) Bitmap {
 		}
 		switch m.AtPos(pos) {
 		case TileWall, TileGoal, TilePlayerOnGoal, TileBoxOnGoal:
-			// do nothing
+			// goal can't be deadzone
 			return
 		}
 		// don't add if already added

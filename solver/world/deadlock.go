@@ -5,11 +5,14 @@ func CheckDeadlock(m Map, boxes PosList, move BoxMove) bool {
 	return false
 }
 
-func FindMoveLocks(m Map) (Bitmap, Bitmap) {
+func FindMoveLocks(m Map, skip Bitmap) (Bitmap, Bitmap) {
 	var vLock, hLock Bitmap
 	addLock := func(x, y int, h bool) {
 		pos := Pos{x, y}
 		if !m.IsInside(pos) {
+			return
+		}
+		if skip.CheckBit(pos) {
 			return
 		}
 		if m.AtPos(pos) == TileWall {

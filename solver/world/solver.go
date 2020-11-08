@@ -2,11 +2,17 @@ package world
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 )
 
-const ExploreBatch = 200
+var (
+	errSolutionFound  = errors.New("solution found")
+	errDuplicateState = errors.New("duplicate state")
+	errDeadlock       = errors.New("deadlock")
+	errInvalidMetric  = errors.New("invalid metric")
+)
 
 type Solver struct {
 	m             Map
@@ -31,27 +37,6 @@ func NewSolver(m Map) *Solver {
 	}
 }
 
-func mergeSorted(base, addition []*Node) []*Node {
-	var result = make([]*Node, len(base)+len(addition))
-	var i, j, k = 0, 0, 0
-	for i < len(base) && j < len(addition) {
-		if base[i].Metric < addition[j].Metric {
-			result[k] = base[i]
-			i++
-		} else {
-			result[k] = addition[j]
-			j++
-		}
-		k++
-	}
-	if i < len(base) {
-		copy(result[k:], base[i:])
-	} else {
-		copy(result[k:], addition[j:])
-	}
-	return result
-}
-
 func (s *Solver) getID() int64 {
 	s.nextID++
 	return s.nextID
@@ -66,85 +51,48 @@ func (s *Solver) Solve(c context.Context) error {
 	s.deadZones = FindDeadZones(s.m)
 
 	log.Print("Finding h/v lock zones...")
-	s.hLock, s.vLock = FindMoveLocks(s.m)
+	s.hLock, s.vLock = FindMoveLocks(s.m, s.deadZones)
 
 	log.Print("Preparing metric calc...")
 	s.metricCalc = NewMetricCalculator(s.m, s.deadZones)
 
 	// initialize
 	log.Print("Starting solution search...")
-	s.root = s.createNode(s.m.InitialBoxPositions(), s.m.StartPos(), nil)
-	// TODO: check
+	var err error
+	s.root, err = s.createNode(s.m.InitialBoxPositions(), s.m.StartPos(), nil)
+	if err == errSolutionFound {
+		s.solution = s.root
+		return nil
+	}
 
 	s.frontier.Add(s.root)
 
-	for {
-		node, err := s.frontier.Pick()
-		if err != nil {
-			return fmt.Errorf("error picking next node: %v", err)
+	for s.frontier.HasNodes() {
+		for _, node := range s.frontier.GetBatch() {
+			select {
+			case <-c.Done():
+				return fmt.Errorf("timed out or canceled")
+			default:
+			}
+			for move := range node.Moves {
+				playePos := node.Boxes[move.BoxIndex]
+				newBoxes := node.ApplyMove(move)
+				child, err := s.createNode(newBoxes, playePos, node)
+				switch err {
+				case nil:
+					node.Moves[move] = child
+					s.frontier.Add(child)
+				case errSolutionFound:
+					s.solution = child
+					node.Moves[move] = child
+					return nil
+				default:
+				}
+			}
 		}
-
 	}
 
 	return fmt.Errorf("all states explored but solution not found")
-}
-
-func (s *Solver) exploreNode(n *Node) []*Node {
-	// log.Printf("Exploring node %p:", n)
-	var nextNodes []*Node
-	for move := range n.Moves {
-		// log.Printf("+ move #%d %s", move.BoxIndex, move.Direction)
-		// copy box positions from current state
-		var nextPositions = make([]Pos, len(n.Boxes))
-		copy(nextPositions, n.Boxes)
-		// apply move to current box positions
-		boxSrcPos := nextPositions[move.BoxIndex]
-		boxDstPos := boxSrcPos.MoveInDirection(move.Direction)
-		nextPositions[move.BoxIndex] = boxDstPos
-
-		domain, moves := NewMoveDomainFromMap(s.m, nextPositions, boxSrcPos, s.deadZones)
-
-		state := State{
-			MoveDomain:   domain,
-			BoxPositions: nextPositions,
-		}
-
-		// create node
-		node := NewNode(state)
-		node.ID = s.getID()
-		node.Parent = n
-
-		// check if state isn't indexed
-		if _, found := s.nodeHashIndex[node.Hash]; found {
-			node.Fail = NodeDuplicate
-			n.Moves[move] = node
-			continue
-		}
-		s.nodeHashIndex[node.Hash] = struct{}{}
-
-		// calculate metric
-		var err error
-		node.Metric, err = s.metricCalc.Evaluate(state.BoxPositions)
-		if err != nil {
-			node.Fail = NodeInvalid
-			n.Moves[move] = node
-			continue
-		}
-
-		setMoves(node, moves)
-		n.Moves[move] = node
-
-		nextNodes = append(nextNodes, node)
-	}
-
-	return nextNodes
-}
-
-func setMoves(n *Node, moves []BoxMove) bool {
-	for _, m := range moves {
-		n.Moves[m] = nil
-	}
-	return len(moves) > 0
 }
 
 func (s Solver) isSolution(boxes PosList) bool {
@@ -219,12 +167,13 @@ func (s Solver) GetPath() ([]MoveDirection, error) {
 }
 
 type SolverDebug struct {
-	DeadZones []Pos            `json:"dead_zones"`
+	DeadZones PosList          `json:"dead_zones"`
+	HLock     PosList          `json:"h_locks"`
+	VLock     PosList          `json:"v_locks"`
 	Metrics   []map[string]int `json:"metrics"`
 }
 
 func (s Solver) GetDebug() SolverDebug {
-	dz := s.deadZones.List()
 	// var metricsMap = make(map[Pos]map[string]int)
 
 	// for y, row := range s.metricCalc.field {
@@ -246,7 +195,9 @@ func (s Solver) GetDebug() SolverDebug {
 	// }
 
 	return SolverDebug{
-		DeadZones: dz,
+		DeadZones: s.deadZones.List(),
+		HLock:     s.hLock.List(),
+		VLock:     s.vLock.List(),
 		// Metrics:   metricList,
 	}
 }
@@ -273,37 +224,45 @@ func (s Solver) GetTree(max int) []*Node {
 	return output
 }
 
-func (s *Solver) createNode(boxes PosList, start Pos, parent *Node) *Node {
+func (s *Solver) createNode(boxes PosList, start Pos, parent *Node) (node *Node, err error) {
 	// check if state was already tracked
 	hash := boxes.Hash()
-	if nodes, exists := s.boxHashIndex[hash]; exists {
+	hashNodes, hashExists := s.boxHashIndex[hash]
+	if hashExists {
 		// check all nodes with same box positions
-		for _, n := range nodes {
+		for _, n := range hashNodes {
 			// if start is in move domain - state is the same
 			if n.MoveDomain.CheckBit(start) {
-				// TODO: return error for duplicate state
-				return nil
+				log.Printf("Duplicate node skipped!")
+				return n, errDuplicateState
 			}
 		}
-		// TODO: save node by hash
 	}
 	// create node
-	node := &Node{
+	node = &Node{
 		ID:     s.getID(),
 		Parent: parent,
+		Moves:  make(map[BoxMove]*Node),
+		Boxes:  boxes,
 	}
-	// TODO: save state to hash index
+	// defer save hash - valid or dead end
+	defer func() {
+		if err != nil {
+			node.MoveDomain = ExploreDomainOnly(s.m, boxes, start)
+		}
+		hashNodes = append(hashNodes, node)
+		s.boxHashIndex[hash] = hashNodes
+	}()
 	// check if state is solution, but only if parent is none (initial state) or parent metric = 1 (one step to solution)
 	if parent == nil || parent.Metric == 1 {
 		if s.isSolution(boxes) {
-			// TODO: return error for solution
-			return nil
+			return node, errSolutionFound
 		}
 	}
 	// TODO: check if deadlock detection is required
 
 	// build move domain and box moves
-	domain, moves := BuildState(s.m, boxes, start, s.deadZones, s.hLock, s.vLock)
+	domain, moves := Explore(s.m, boxes, start, s.deadZones, s.hLock, s.vLock)
 	node.MoveDomain = domain
 	for _, move := range moves {
 		node.Moves[move] = nil
@@ -312,98 +271,10 @@ func (s *Solver) createNode(boxes PosList, start Pos, parent *Node) *Node {
 	// evaluate metric
 	metric, err := s.metricCalc.Evaluate(boxes)
 	if err != nil {
-		// TODO: return invalid state error
-		return nil
+		node.Fail = NodeInvalid
+		return node, errInvalidMetric
 	}
 	node.Metric = metric
 
-	return node
-}
-
-func BuildState(m Map, boxes PosList, start Pos, deadZones, hLock, vLock Bitmap) (Bitmap, []BoxMove) {
-	var domain Bitmap
-	var boxBitmap Bitmap
-	var moves []BoxMove
-
-	for _, pos := range boxes {
-		boxBitmap.SetBit(pos)
-	}
-
-	boxIndex := func(p Pos) int {
-		for i, pos := range boxes {
-			if p == pos {
-				return i
-			}
-		}
-		return -1
-	}
-
-	var fill func(p Pos, d MoveDirection, dist int)
-	fill = func(p Pos, d MoveDirection, dist int) {
-		if !m.IsInside(p) {
-			return
-		}
-		if m.AtPos(p) == TileWall {
-			return
-		}
-		backward := d.Opposite()
-		// if we hit a box - check if move is possible and save
-		if boxBitmap.CheckBit(p) {
-			dstPos := p.MoveInDirection(d)
-			// check if destination position is available
-			if m.AtPos(dstPos) == TileWall {
-				return
-			}
-			if boxBitmap.CheckBit(dstPos) {
-				return
-			}
-			// check destination isn't in dead zone
-			if deadZones.CheckBit(dstPos) {
-				return
-			}
-			// for quick deadlock detection check if there is neighbour box with same h/v lock as target position
-			dstHLock := hLock.CheckBit(dstPos)
-			dstVLock := vLock.CheckBit(dstPos)
-			if dstHLock || dstVLock {
-				for _, dir := range AllDirections {
-					if dir == backward {
-						continue
-					}
-					n := p.MoveInDirection(dir)
-					if !boxBitmap.CheckBit(n) {
-						continue
-					}
-					if dstHLock && hLock.CheckBit(n) {
-						return
-					}
-					if dstVLock && vLock.CheckBit(n) {
-						return
-					}
-				}
-			}
-			// save move
-			move := BoxMove{
-				Direction: d,
-				Distance:  dist,
-				BoxIndex:  boxIndex(p),
-			}
-			moves = append(moves, move)
-			return
-		}
-		if domain.CheckBit(p) {
-			return
-		}
-		domain.SetBit(p)
-		for _, dir := range AllDirections {
-			if dir == backward {
-				continue
-			}
-			n := p.MoveInDirection(dir)
-			fill(n, dir, dist+1)
-		}
-	}
-
-	fill(start, -1, 0)
-
-	return domain, moves
+	return node, nil
 }

@@ -37,13 +37,14 @@ func TestSolver(t *testing.T) {
 	}
 }
 
+/*
 var exploreLevel = `
 ######
 #@$ .#
 # $$.#
 #  ###
-#. #  
-####  
+#. #
+####
 `
 
 func TestExplorationLogic(t *testing.T) {
@@ -81,3 +82,4 @@ func TestExplorationLogic(t *testing.T) {
 	t.Fatalf("Moves: %+v", moves)
 
 }
+*/

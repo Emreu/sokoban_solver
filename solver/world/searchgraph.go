@@ -1,11 +1,18 @@
 package world
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type BoxMove struct {
 	BoxIndex  int
 	Distance  int
 	Direction MoveDirection
+}
+
+func (b BoxMove) String() string {
+	return fmt.Sprintf("[Move #%d %s (%d)]", b.BoxIndex, b.Direction, b.Distance)
 }
 
 type NodeFail int
@@ -14,6 +21,7 @@ const (
 	NodeOK NodeFail = iota
 	NodeDuplicate
 	NodeInvalid
+	NodeDeadlock
 )
 
 type Node struct {
@@ -29,18 +37,11 @@ type Node struct {
 	Moves map[BoxMove]*Node
 }
 
-func NewNode(s State) *Node {
-	return &Node{
-		Metric: -1,
-		Hash:   s.Hash(),
-		// State:  s,
-		Moves: make(map[BoxMove]*Node),
-	}
-}
-
-func (n *Node) ApplyMove(move BoxMove) PosList {
-	// n.BoxPositions[move.BoxIndex]
-	return nil
+func (n Node) ApplyMove(move BoxMove) PosList {
+	newBoxes := make(PosList, len(n.Boxes))
+	copy(newBoxes, n.Boxes)
+	newBoxes[move.BoxIndex] = newBoxes[move.BoxIndex].MoveInDirection(move.Direction)
+	return newBoxes
 }
 
 func (n Node) MarshalJSON() ([]byte, error) {
